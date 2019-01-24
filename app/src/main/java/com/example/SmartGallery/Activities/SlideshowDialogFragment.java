@@ -92,7 +92,7 @@ public class SlideshowDialogFragment extends DialogFragment {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_SHORT).show();
+            Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -125,6 +125,7 @@ public class SlideshowDialogFragment extends DialogFragment {
                 CaptionFromServer = data;
             } catch (Exception e) {
                 Log.i("MINA", "EXCEPTION IN THE ASYNC TASK " + e.getMessage() + "\nTO STRING " + e.toString());
+                data = "error connecting to server\n"+ e.getMessage();
                 e.printStackTrace();
             } finally {
                 if (httpURLConnection != null) {

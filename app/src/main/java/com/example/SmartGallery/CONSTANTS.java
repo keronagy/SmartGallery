@@ -17,7 +17,7 @@ public class CONSTANTS {
 
 
     //Server Data
-    public static final String SERVER_URI = "http://192.168.1.6:5000/api";
+    public static String SERVER_URI = "http://192.168.1.6:5000/api";
     public static final String IMAGE_POST_SERVER = "image";
     public static final String CONTENT_TYPE_STRING = "Content-Type";
     public static final String CONTENT_TYPE = "application/json; charset=UTF-8";

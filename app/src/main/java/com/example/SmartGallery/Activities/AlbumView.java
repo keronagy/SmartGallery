@@ -2,6 +2,7 @@ package com.example.SmartGallery.Activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.MergeCursor;
 import android.net.Uri;
@@ -14,6 +15,9 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 
 import com.example.SmartGallery.Adapters.ImagesAdapter;
@@ -53,6 +57,7 @@ public class AlbumView extends AppCompatActivity {
         album_name = getIntent().getStringExtra(CONSTANTS.ALBUM_NAME);
         toolbar.setTitle(album_name);
         toolbar.setSubtitle(album_name);
+        toolbar.setPopupTheme(R.style.TextAppearance_AppCompat_Widget_ActionBar_Title);
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -61,6 +66,7 @@ public class AlbumView extends AppCompatActivity {
         if(!CONSTANTS.hasPermissions(this, PERMISSIONS)){
             ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_PERMISSION_KEY);
         }
+
 
 
         recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
@@ -84,6 +90,23 @@ public class AlbumView extends AppCompatActivity {
         }));
 
         fetchImages();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.setting,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.setting)
+        {
+            startActivity(new Intent(AlbumView.this,Setting.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void fetchImages() {

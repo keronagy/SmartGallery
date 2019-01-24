@@ -15,6 +15,9 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -81,6 +84,22 @@ public class MainActivity extends AppCompatActivity {
 //        fetchAlbums();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.setting,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.setting)
+        {
+            startActivity(new Intent(MainActivity.this,Setting.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     private void fetchAlbums() {
 
