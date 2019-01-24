@@ -106,7 +106,7 @@ public class SlideshowDialogFragment extends DialogFragment {
             HttpURLConnection httpURLConnection = null;
             try {
                 httpURLConnection = (HttpURLConnection) new URL(params[0]).openConnection();
-                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE, CONSTANTS.CONTENT_TYPE);
+                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
                 httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
 
                 httpURLConnection.setDoOutput(true);
