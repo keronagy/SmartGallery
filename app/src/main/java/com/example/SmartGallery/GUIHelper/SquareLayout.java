@@ -1,4 +1,4 @@
-package com.example.myapplication.GUIHelper;
+package com.example.SmartGallery.GUIHelper;
 
 import android.annotation.TargetApi;
 import android.content.Context;

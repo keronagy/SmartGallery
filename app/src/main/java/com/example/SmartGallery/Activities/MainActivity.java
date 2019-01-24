@@ -1,4 +1,4 @@
-package com.example.myapplication.Activities;
+package com.example.SmartGallery.Activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -18,10 +18,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Toast;
 
-import com.example.myapplication.Album;
-import com.example.myapplication.CONSTANTS;
-import com.example.myapplication.Adapters.GalleryAdapter;
-import com.example.myapplication.R;
+import com.example.SmartGallery.Album;
+import com.example.SmartGallery.CONSTANTS;
+import com.example.SmartGallery.Adapters.GalleryAdapter;
+import com.example.SmartGallery.R;
 
 import java.util.ArrayList;
 

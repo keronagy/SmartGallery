@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.SmartGallery;
 
 import android.content.Context;
 import android.content.pm.PackageManager;

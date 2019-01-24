@@ -1,10 +1,8 @@
-package com.example.myapplication.Activities;
+package com.example.SmartGallery.Activities;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -22,10 +20,9 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
-import com.example.myapplication.CONSTANTS;
-import com.example.myapplication.Image;
-import com.example.myapplication.R;
+import com.example.SmartGallery.CONSTANTS;
+import com.example.SmartGallery.Image;
+import com.example.SmartGallery.R;
 
 import org.json.JSONObject;
 

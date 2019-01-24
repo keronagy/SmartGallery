@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.SmartGallery;
 
 import org.junit.Test;
 

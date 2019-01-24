@@ -1,4 +1,4 @@
-package com.example.myapplication.Adapters;
+package com.example.SmartGallery.Adapters;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.GestureDetector;
@@ -11,8 +11,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.example.myapplication.Image;
-import com.example.myapplication.R;
+import com.example.SmartGallery.Image;
+import com.example.SmartGallery.R;
 
 import java.io.File;
 import java.util.List;
