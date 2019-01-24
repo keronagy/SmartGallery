@@ -55,9 +55,7 @@ public class AlbumView extends AppCompatActivity {
         images = new ArrayList<>();
         mAdapter = new ImagesAdapter(getApplicationContext(), images);
         album_name = getIntent().getStringExtra(CONSTANTS.ALBUM_NAME);
-        toolbar.setTitle(album_name);
         toolbar.setSubtitle(album_name);
-        toolbar.setPopupTheme(R.style.TextAppearance_AppCompat_Widget_ActionBar_Title);
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());

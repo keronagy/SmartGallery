@@ -24,6 +24,7 @@ public class Setting extends AppCompatActivity {
         URI = findViewById(R.id.server_uri_txt);
         Save = findViewById(R.id.save_setting_btn);
         Cancel = findViewById(R.id.cancel_setting_btn);
+        URI.setText(CONSTANTS.SERVER_URI);
 
 
         Save.setOnClickListener(new View.OnClickListener() {

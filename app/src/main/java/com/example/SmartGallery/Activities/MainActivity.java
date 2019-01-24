@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle(R.string.albums);
         toolbar.setSubtitle(R.string.albums);
 
         recyclerView = findViewById(R.id.recycler_view);
