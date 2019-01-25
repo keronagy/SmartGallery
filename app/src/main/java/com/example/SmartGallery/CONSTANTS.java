@@ -16,13 +16,18 @@ public class CONSTANTS {
     public static final String POSITION = "position";
 
 
+
+
     //Server Data
     public static String SERVER_URI = "http://192.168.1.6:5000/api";
     public static final String IMAGE_POST_SERVER = "image";
     public static final String CONTENT_TYPE_STRING = "Content-Type";
     public static final String CONTENT_TYPE = "application/json; charset=UTF-8";
     public static final String REQUEST_TYPE = "POST";
-//    public static final String IMAGE_POST_SERVER = "image";
+    public static final String APP_SERVER_PREF = "server_pref";
+    public static final String APP_SERVER_PREF_API = "server_api";
+    public static final int PRIVATE_SHARED_PREF = 0;
+
 
 
 
@@ -45,4 +50,6 @@ public class CONSTANTS {
         }
         return true;
     }
+
+
 }

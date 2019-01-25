@@ -4,7 +4,7 @@
     <string name="get_caption">Get Caption</string>
     <string name="setting">Setting</string>
     <string name="title_activity_settings">Settings</string>
-    <string name="server_uir">Server UIR</string>
+    <string name="server_uir">Server URI</string>
     <string name="enter_uri">Enter server URI here</string>
     <string name="save">Save</string>
     <string name="cancel">cancel</string>

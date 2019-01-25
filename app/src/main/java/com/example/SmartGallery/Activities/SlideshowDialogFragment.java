@@ -47,6 +47,7 @@ public class SlideshowDialogFragment extends DialogFragment {
     private int selectedPosition = 0;
     private Button GetCaptionBtn;
     private ImageView togetCaption;
+    private TextView captionTxt;
     static SlideshowDialogFragment newInstance() {
         SlideshowDialogFragment f = new SlideshowDialogFragment();
         return f;
@@ -64,6 +65,7 @@ public class SlideshowDialogFragment extends DialogFragment {
         lblDate = (TextView) v.findViewById(R.id.date);
         GetCaptionBtn = v.findViewById(R.id.caption_btn);
         mainthis = getActivity();
+        captionTxt = v.findViewById(R.id.caption_txt);
         GetCaptionBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -93,6 +95,7 @@ public class SlideshowDialogFragment extends DialogFragment {
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
+            captionTxt.setText(s);
         }
 
         @Override
@@ -123,6 +126,7 @@ public class SlideshowDialogFragment extends DialogFragment {
                     data += current;
                 }
                 CaptionFromServer = data;
+                images.get(Integer.parseInt(params[2])).setCaption(data);
             } catch (Exception e) {
                 Log.i("MINA", "EXCEPTION IN THE ASYNC TASK " + e.getMessage() + "\nTO STRING " + e.toString());
                 data = "error connecting to server\n"+ e.getMessage();
@@ -155,14 +159,12 @@ public class SlideshowDialogFragment extends DialogFragment {
         try{
             postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
 //                    Log.i("MINA","MINA "+postData.toString());
-            new SendDeviceDetails().execute(CONSTANTS.SERVER_URI, postData.toString());
-            Toast.makeText(getActivity(), CaptionFromServer, Toast.LENGTH_LONG).show();
+            new SendDeviceDetails().execute(CONSTANTS.SERVER_URI, postData.toString(),selectedPosition+"");
         }
         catch (Exception e){
             e.printStackTrace();
         }
 
-        Toast.makeText(getActivity(), Caption, Toast.LENGTH_LONG).show();
 
     }
 
@@ -211,6 +213,7 @@ public class SlideshowDialogFragment extends DialogFragment {
         Image image = images.get(position);
         lblTitle.setText(image.getName());
         lblDate.setText(image.getTime());
+        captionTxt.setText(image.getCaption());
     }
 
     @Override

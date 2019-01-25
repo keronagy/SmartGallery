@@ -3,6 +3,7 @@ package com.example.SmartGallery.Activities;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.MergeCursor;
@@ -79,6 +80,16 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }));
+
+        String API = loadSharedPref();
+        if(API.equals(""))
+        {
+            saveSharedPref("http://192.168.1.6:5000/api");
+        }
+        else
+        {
+            CONSTANTS.SERVER_URI= API;
+        }
 
 //        fetchAlbums();
     }
@@ -184,5 +195,19 @@ public class MainActivity extends AppCompatActivity {
         if (pDialog != null && pDialog.isShowing()) {
             pDialog.cancel();
         }
+    }
+
+    private void saveSharedPref(String API)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).edit();
+        editor.putString(CONSTANTS.APP_SERVER_PREF_API,API);
+        editor.apply();
+    }
+
+    private String loadSharedPref()
+    {
+        SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
+        String API = sharedPreferences.getString(CONSTANTS.APP_SERVER_PREF_API,"");
+        return API;
     }
 }

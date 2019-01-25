@@ -1,5 +1,6 @@
 package com.example.SmartGallery.Activities;
 
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -33,6 +34,7 @@ public class Setting extends AppCompatActivity {
                 String uri = URI.getText().toString();
                 if(!uri.isEmpty()) {
                     CONSTANTS.SERVER_URI = URI.getText().toString();
+                    saveSharedPref(uri);
                     finish();
                 }
             }
@@ -47,5 +49,12 @@ public class Setting extends AppCompatActivity {
         });
 
 
+    }
+
+    private void saveSharedPref(String API)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).edit();
+        editor.putString(CONSTANTS.APP_SERVER_PREF_API,API);
+        editor.apply();
     }
 }
