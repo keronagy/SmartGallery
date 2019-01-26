@@ -8,6 +8,8 @@
     <string name="enter_uri">Enter server URI here</string>
     <string name="save">Save</string>
     <string name="cancel">cancel</string>
+    <string name="camera_permission">CAMERA permission allows us to access CAMERA app</string>
+    <string name="camera">Camera</string>
 
 
 </resources>

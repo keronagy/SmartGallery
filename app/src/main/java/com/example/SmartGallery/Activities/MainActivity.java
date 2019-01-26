@@ -7,15 +7,19 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.MergeCursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,7 +30,18 @@ import com.example.SmartGallery.Album;
 import com.example.SmartGallery.CONSTANTS;
 import com.example.SmartGallery.Adapters.AlbumAdapter;
 import com.example.SmartGallery.R;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 
@@ -38,7 +53,9 @@ public class MainActivity extends AppCompatActivity {
     private ProgressDialog pDialog;
     private AlbumAdapter mAdapter;
     private RecyclerView recyclerView;
+    private Uri uri;
     static final int REQUEST_PERMISSION_KEY = 1;
+    final int RequestPermissionCode=2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +124,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this,Setting.class));
             return true;
         }
+        if(item.getItemId() == R.id.camera_menu)
+        {
+            CameraOpen();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -162,6 +185,16 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "You must accept permissions.", Toast.LENGTH_LONG).show();
                 }
             }
+            break;
+            case RequestPermissionCode:
+            {
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+//                    Toast.makeText(this,getString(R.string.perm_granted),Toast.LENGTH_SHORT).show();
+                    CameraOpen();
+//                else
+//                    Toast.makeText(this,getString(R.string.perm_canceled),Toast.LENGTH_SHORT).show();
+            }
+            break;
         }
 
     }
@@ -204,5 +237,111 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
         String API = sharedPreferences.getString(CONSTANTS.APP_SERVER_PREF_API,"");
         return API;
+    }
+
+    private void openCamAndCrop()
+    {
+        int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA);
+        if(permissionCheck == PackageManager.PERMISSION_GRANTED)
+            CameraOpen();
+        else
+            RequestRuntimePermission();
+
+    }
+
+    private void RequestRuntimePermission() {
+        if(ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,Manifest.permission.CAMERA))
+            Toast.makeText(this,getString(R.string.camera_permission),Toast.LENGTH_SHORT).show();
+        else
+        {
+            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.CAMERA},RequestPermissionCode);
+        }
+    }
+    private void CameraOpen() {
+
+        CropImage.activity()
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .start(this);
+
+    }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                uri = result.getUri();
+
+                try {
+                    getTextFromImage(MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void getTextFromImage(Bitmap bitmap) {
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+
+        bitmap.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        new ServerConnection().execute( encodedImage);
+    }
+
+    private class ServerConnection extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Toast.makeText(MainActivity.this, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
+
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            JSONObject postData = new JSONObject();
+            try{
+                postData.put(CONSTANTS.IMAGE_POST_SERVER, params[0] );
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+
+            String data = "";
+            HttpURLConnection httpURLConnection = null;
+            try {
+                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI).openConnection();
+                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
+                httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
+
+                httpURLConnection.setDoOutput(true);
+
+                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
+                wr.writeBytes(postData.toString());
+                wr.flush();
+                wr.close();
+
+                InputStream in = httpURLConnection.getInputStream();
+                InputStreamReader inputStreamReader = new InputStreamReader(in);
+
+                int inputStreamData = inputStreamReader.read();
+                while (inputStreamData != -1) {
+                    char current = (char) inputStreamData;
+                    inputStreamData = inputStreamReader.read();
+                    data += current;
+                }
+            } catch (Exception e) {
+                data = "error connecting to server\n"+ e.getMessage();
+                e.printStackTrace();
+            } finally {
+                if (httpURLConnection != null) {
+                    httpURLConnection.disconnect();
+                }
+            }
+
+            return data;
+        }
     }
 }
