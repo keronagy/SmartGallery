@@ -24,7 +24,7 @@ import android.widget.Toast;
 
 import com.example.SmartGallery.Album;
 import com.example.SmartGallery.CONSTANTS;
-import com.example.SmartGallery.Adapters.GalleryAdapter;
+import com.example.SmartGallery.Adapters.AlbumAdapter;
 import com.example.SmartGallery.R;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String endpoint = "https://api.androidhive.info/json/glide.json";
     private ArrayList<Album> albumList;
     private ProgressDialog pDialog;
-    private GalleryAdapter mAdapter;
+    private AlbumAdapter mAdapter;
     private RecyclerView recyclerView;
     static final int REQUEST_PERMISSION_KEY = 1;
 
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
         pDialog = new ProgressDialog(this);
         albumList = new ArrayList<>();
-        mAdapter = new GalleryAdapter(getApplicationContext(), albumList);
+        mAdapter = new AlbumAdapter(getApplicationContext(), albumList);
 
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
         recyclerView.setLayoutManager(mLayoutManager);
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
+        recyclerView.addOnItemTouchListener(new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
                 Intent intent = new Intent(MainActivity.this, AlbumView.class);
@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
             CONSTANTS.SERVER_URI= API;
         }
 
-//        fetchAlbums();
     }
 
     @Override
@@ -145,11 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 pDialog.dismiss();
             }
         }
-
-
         cursor.close();
-//        Collections.sort(albumList, new MapComparator(Function.KEY_TIMESTAMP, "dsc")); // Arranging photo album by timestamp decending
-
     }
 
 

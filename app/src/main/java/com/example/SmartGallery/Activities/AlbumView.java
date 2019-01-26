@@ -22,7 +22,7 @@ import android.view.View;
 
 import com.example.SmartGallery.Adapters.ImagesAdapter;
 import com.example.SmartGallery.CONSTANTS;
-import com.example.SmartGallery.Adapters.GalleryAdapter;
+import com.example.SmartGallery.Adapters.AlbumAdapter;
 import com.example.SmartGallery.Image;
 import com.example.SmartGallery.R;
 
@@ -67,7 +67,7 @@ public class AlbumView extends AppCompatActivity {
 
 
 
-        recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
+        recyclerView.addOnItemTouchListener(new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
 

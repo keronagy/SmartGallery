@@ -9,7 +9,6 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Base64;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,23 +45,21 @@ public class SlideshowDialogFragment extends DialogFragment {
     private TextView lblCount, lblTitle, lblDate;
     private int selectedPosition = 0;
     private Button GetCaptionBtn;
-    private ImageView togetCaption;
     private TextView captionTxt;
     static SlideshowDialogFragment newInstance() {
         SlideshowDialogFragment f = new SlideshowDialogFragment();
         return f;
     }
-    public String CaptionFromServer="";
     public Context mainthis;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.image_slider, container, false);
-        viewPager = (ViewPager) v.findViewById(R.id.viewpager);
-        lblCount = (TextView) v.findViewById(R.id.lbl_count);
-        lblTitle = (TextView) v.findViewById(R.id.title);
-        lblDate = (TextView) v.findViewById(R.id.date);
+        viewPager = v.findViewById(R.id.viewpager);
+        lblCount = v.findViewById(R.id.lbl_count);
+        lblTitle =  v.findViewById(R.id.title);
+        lblDate =  v.findViewById(R.id.date);
         GetCaptionBtn = v.findViewById(R.id.caption_btn);
         mainthis = getActivity();
         captionTxt = v.findViewById(R.id.caption_txt);
@@ -76,10 +73,6 @@ public class SlideshowDialogFragment extends DialogFragment {
 
         images = (ArrayList<Image>) getArguments().getSerializable(CONSTANTS.IMAGES);
         selectedPosition = getArguments().getInt(CONSTANTS.POSITION);
-
-        Log.e(TAG, "position: " + selectedPosition);
-        Log.e(TAG, "images size: " + images.size());
-
         myViewPagerAdapter = new MyViewPagerAdapter();
         viewPager.setAdapter(myViewPagerAdapter);
         viewPager.addOnPageChangeListener(viewPagerPageChangeListener);
@@ -89,98 +82,10 @@ public class SlideshowDialogFragment extends DialogFragment {
         return v;
     }
 
-    private class SendDeviceDetails extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
-            captionTxt.setText(s);
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            CaptionFromServer = "";
-            String data = "";
-
-            HttpURLConnection httpURLConnection = null;
-            try {
-                httpURLConnection = (HttpURLConnection) new URL(params[0]).openConnection();
-                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
-                httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
-
-                httpURLConnection.setDoOutput(true);
-
-                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
-                wr.writeBytes(params[1]);
-                wr.flush();
-                wr.close();
-
-                InputStream in = httpURLConnection.getInputStream();
-                InputStreamReader inputStreamReader = new InputStreamReader(in);
-
-                int inputStreamData = inputStreamReader.read();
-                while (inputStreamData != -1) {
-                    char current = (char) inputStreamData;
-                    inputStreamData = inputStreamReader.read();
-                    data += current;
-                }
-                CaptionFromServer = data;
-                images.get(Integer.parseInt(params[2])).setCaption(data);
-            } catch (Exception e) {
-                Log.i("MINA", "EXCEPTION IN THE ASYNC TASK " + e.getMessage() + "\nTO STRING " + e.toString());
-                data = "error connecting to server\n"+ e.getMessage();
-                e.printStackTrace();
-            } finally {
-                if (httpURLConnection != null) {
-                    httpURLConnection.disconnect();
-                }
-            }
-
-            return data;
-        }
-    }
-
-    public void getCaptionFromServer() {
-        String Caption="";
-
-        final int COMPRESSION_QUALITY = 100;
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-
-        Bitmap bmp =  getBitmap(images.get(selectedPosition).getPath());
-
-        bmp.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY,
-                byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-
-        JSONObject postData = new JSONObject();
-        try{
-            postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
-//                    Log.i("MINA","MINA "+postData.toString());
-            new SendDeviceDetails().execute(CONSTANTS.SERVER_URI, postData.toString(),selectedPosition+"");
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-
-
-    }
-
-    public Bitmap getBitmap(String path) {
-        try {
-            Bitmap bitmap = null;
-            File f = new File(path);
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-
-            bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-            return bitmap;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
     }
 
     private void setCurrentItem(int position) {
@@ -216,11 +121,7 @@ public class SlideshowDialogFragment extends DialogFragment {
         captionTxt.setText(image.getCaption());
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-    }
+
 
     //  adapter
     public class MyViewPagerAdapter extends PagerAdapter {
@@ -237,8 +138,6 @@ public class SlideshowDialogFragment extends DialogFragment {
             View view = layoutInflater.inflate(R.layout.zoomable_image, container, false);
 
             ImageView imageViewPreview = (ImageView) view.findViewById(R.id.image_preview);
-
-            togetCaption = imageViewPreview;
             Image image = images.get(position);
 
             Glide.with(getActivity()).load(new File(image.getPath()))
@@ -268,4 +167,86 @@ public class SlideshowDialogFragment extends DialogFragment {
             container.removeView((View) object);
         }
     }
+
+    public void getCaptionFromServer() {
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+        Bitmap bmp =  getBitmap(images.get(selectedPosition).getPath());
+        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        new ServerConnection().execute( encodedImage,selectedPosition+"");
+    }
+
+    public Bitmap getBitmap(String path) {
+        try {
+            File f = new File(path);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+            return bitmap;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    private class ServerConnection extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
+            captionTxt.setText(s);
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            JSONObject postData = new JSONObject();
+            try{
+                postData.put(CONSTANTS.IMAGE_POST_SERVER, params[0] );
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+
+            String data = "";
+            HttpURLConnection httpURLConnection = null;
+            try {
+                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI).openConnection();
+                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
+                httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
+
+                httpURLConnection.setDoOutput(true);
+
+                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
+                wr.writeBytes(postData.toString());
+                wr.flush();
+                wr.close();
+
+                InputStream in = httpURLConnection.getInputStream();
+                InputStreamReader inputStreamReader = new InputStreamReader(in);
+
+                int inputStreamData = inputStreamReader.read();
+                while (inputStreamData != -1) {
+                    char current = (char) inputStreamData;
+                    inputStreamData = inputStreamReader.read();
+                    data += current;
+                }
+                images.get(Integer.parseInt(params[1])).setCaption(data);
+            } catch (Exception e) {
+                data = "error connecting to server\n"+ e.getMessage();
+                e.printStackTrace();
+            } finally {
+                if (httpURLConnection != null) {
+                    httpURLConnection.disconnect();
+                }
+            }
+
+            return data;
+        }
+    }
+
+
+
 }

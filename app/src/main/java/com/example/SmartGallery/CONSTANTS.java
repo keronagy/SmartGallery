@@ -14,6 +14,7 @@ public class CONSTANTS {
     public static final String ALBUM_PATH = "album_path";
     public static final String IMAGES = "images";
     public static final String POSITION = "position";
+    public static final int COMPRESSION_QUALITY = 100;
 
 
 
