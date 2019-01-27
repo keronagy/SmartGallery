@@ -46,6 +46,7 @@ public class SlideshowDialogFragment extends DialogFragment {
     private int selectedPosition = 0;
     private Button GetCaptionBtn;
     private TextView captionTxt;
+    private String curposition;
     static SlideshowDialogFragment newInstance() {
         SlideshowDialogFragment f = new SlideshowDialogFragment();
         return f;
@@ -73,6 +74,7 @@ public class SlideshowDialogFragment extends DialogFragment {
 
         images = (ArrayList<Image>) getArguments().getSerializable(CONSTANTS.IMAGES);
         selectedPosition = getArguments().getInt(CONSTANTS.POSITION);
+        curposition = getArguments().getInt(CONSTANTS.POSITION)+"";
         myViewPagerAdapter = new MyViewPagerAdapter();
         viewPager.setAdapter(myViewPagerAdapter);
         viewPager.addOnPageChangeListener(viewPagerPageChangeListener);
@@ -114,7 +116,7 @@ public class SlideshowDialogFragment extends DialogFragment {
 
     private void displayMetaInfo(int position) {
         lblCount.setText((position + 1) + " of " + images.size());
-
+        curposition = position+"";
         Image image = images.get(position);
         lblTitle.setText(image.getName());
         lblDate.setText(image.getTime());
@@ -171,11 +173,11 @@ public class SlideshowDialogFragment extends DialogFragment {
     public void getCaptionFromServer() {
         String encodedImage;
         ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-        Bitmap bmp =  getBitmap(images.get(selectedPosition).getPath());
+        Bitmap bmp =  getBitmap(images.get(Integer.parseInt(curposition)).getPath());
         bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
         byte[] b = byteArrayBitmapStream.toByteArray();
         encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        new ServerConnection().execute( encodedImage,selectedPosition+"");
+        new ServerConnection().execute( encodedImage,curposition);
     }
 
     public Bitmap getBitmap(String path) {
