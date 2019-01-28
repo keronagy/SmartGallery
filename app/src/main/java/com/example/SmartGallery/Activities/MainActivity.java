@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if(item.getItemId() == R.id.camera_menu)
         {
-            CameraOpen();
+            openCamAndCrop();
             return true;
         }
 
@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
 //                    Toast.makeText(this,getString(R.string.perm_granted),Toast.LENGTH_SHORT).show();
-                    CameraOpen();
+                    openCamAndCrop();
 //                else
 //                    Toast.makeText(this,getString(R.string.perm_canceled),Toast.LENGTH_SHORT).show();
             }

@@ -130,7 +130,7 @@ public class SlideshowDialogFragment extends DialogFragment {
 
         private LayoutInflater layoutInflater;
 
-        public MyViewPagerAdapter() {
+        public MyViewPagerAdapter()  {
         }
 
         @Override
@@ -171,13 +171,8 @@ public class SlideshowDialogFragment extends DialogFragment {
     }
 
     public void getCaptionFromServer() {
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-        Bitmap bmp =  getBitmap(images.get(Integer.parseInt(curposition)).getPath());
-        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        new ServerConnection().execute( encodedImage,curposition);
+
+        new ServerConnection().execute( curposition);
     }
 
     public Bitmap getBitmap(String path) {
@@ -204,9 +199,15 @@ public class SlideshowDialogFragment extends DialogFragment {
         @Override
         protected String doInBackground(String... params) {
 
+            String encodedImage;
+            ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+            Bitmap bmp =  getBitmap(images.get(Integer.parseInt(curposition)).getPath());
+            bmp.compress(Bitmap.CompressFormat.JPEG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+            byte[] b = byteArrayBitmapStream.toByteArray();
+            encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
             JSONObject postData = new JSONObject();
             try{
-                postData.put(CONSTANTS.IMAGE_POST_SERVER, params[0] );
+                postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -235,7 +236,7 @@ public class SlideshowDialogFragment extends DialogFragment {
                     inputStreamData = inputStreamReader.read();
                     data += current;
                 }
-                images.get(Integer.parseInt(params[1])).setCaption(data);
+                images.get(Integer.parseInt(params[0])).setCaption(data);
             } catch (Exception e) {
                 data = "error connecting to server\n"+ e.getMessage();
                 e.printStackTrace();
