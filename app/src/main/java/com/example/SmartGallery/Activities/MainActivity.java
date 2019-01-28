@@ -251,7 +251,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void RequestRuntimePermission() {
         if(ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,Manifest.permission.CAMERA))
-            Toast.makeText(this,getString(R.string.camera_permission),Toast.LENGTH_SHORT).show();
+        {
+//            Toast.makeText(this,getString(R.string.camera_permission),Toast.LENGTH_SHORT).show();
+        }
         else
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.CAMERA},RequestPermissionCode);
