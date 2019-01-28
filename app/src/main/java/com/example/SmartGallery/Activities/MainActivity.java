@@ -280,16 +280,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getTextFromImage(Bitmap bitmap) {
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
 
-        bitmap.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        new ServerConnection().execute( encodedImage);
+        new ServerConnection().execute( bitmap);
     }
 
-    private class ServerConnection extends AsyncTask<String, Void, String> {
+    private class ServerConnection extends AsyncTask<Bitmap, Void, String> {
 
         @Override
         protected void onPostExecute(String s) {
@@ -299,11 +294,17 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String doInBackground(Bitmap... bitmap) {
 
+            String encodedImage;
+            ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+
+            bitmap[0].compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+            byte[] b = byteArrayBitmapStream.toByteArray();
+            encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
             JSONObject postData = new JSONObject();
             try{
-                postData.put(CONSTANTS.IMAGE_POST_SERVER, params[0] );
+                postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
             }
             catch (Exception e){
                 e.printStackTrace();
