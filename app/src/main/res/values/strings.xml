@@ -10,6 +10,11 @@
     <string name="cancel">cancel</string>
     <string name="camera_permission">CAMERA permission allows us to access CAMERA app</string>
     <string name="camera">Camera</string>
+    <string name="search">Search</string>
+    <string name="tags">Tags</string>
+    <string name="caption">Caption</string>
+    <string name="name">Name</string>
+    <string name="search_results">Search Results</string>
 
 
 </resources>

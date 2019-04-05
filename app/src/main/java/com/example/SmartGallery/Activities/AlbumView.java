@@ -6,27 +6,33 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.MergeCursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.example.SmartGallery.Adapters.ImagesAdapter;
-import com.example.SmartGallery.CONSTANTS;
 import com.example.SmartGallery.Adapters.AlbumAdapter;
+import com.example.SmartGallery.Adapters.ImagesAdapter;
+import com.example.SmartGallery.Adapters.SearchAdapter;
+import com.example.SmartGallery.CONSTANTS;
+import com.example.SmartGallery.Database.DBAdapter;
 import com.example.SmartGallery.Image;
 import com.example.SmartGallery.R;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
+
 
 public class AlbumView extends AppCompatActivity {
 
@@ -38,6 +44,12 @@ public class AlbumView extends AppCompatActivity {
     private RecyclerView recyclerView;
     static final int REQUEST_PERMISSION_KEY = 1;
     private String album_name="";
+    DBAdapter DB;
+
+    private SearchAdapter searchAdapter;
+    private Toolbar toolbar;
+
+    RecyclerView.OnItemTouchListener touchListener;
 
 
     @Override
@@ -45,11 +57,13 @@ public class AlbumView extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        openDB();
 
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
 
         pDialog = new ProgressDialog(this);
         images = new ArrayList<>();
@@ -67,7 +81,7 @@ public class AlbumView extends AppCompatActivity {
 
 
 
-        recyclerView.addOnItemTouchListener(new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+        touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
 
@@ -85,15 +99,90 @@ public class AlbumView extends AppCompatActivity {
             public void onLongClick(View view, int position) {
 
             }
-        }));
+        });
+        recyclerView.addOnItemTouchListener(touchListener);
 
         fetchImages();
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.setting,menu);
+        menuInflater.inflate(R.menu.setting,menu);MenuItem search = menu.findItem(R.id.search_menu);
+        SearchView searchView = (SearchView) search.getActionView();
+        search.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+
+            @Override
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                // Do whatever you need
+                return true; // KEEP IT TO TRUE OR IT DOESN'T OPEN !!
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                toolbar.setSubtitle(R.string.search_results);
+
+                return true; // OR FALSE IF YOU DIDN'T WANT IT TO CLOSE!
+            }
+        });
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+
+                Cursor data = DB.getAllRowsSorted();
+                HashSet<Image> searcedImages = new HashSet<>();
+
+                for (int i = 0; i < 10; i++) {
+
+                    data.moveToNext();
+                    String path = data.getString(DBAdapter.COL_PATH);
+                    File f = new File(path);
+                    String name = f.getName();
+                    String caption = data.getString(DBAdapter.COL_CAPTION);
+                    String album = data.getString(DBAdapter.COL_ALBUM);
+                    String tags = data.getString(DBAdapter.COL_TAGS);
+                    String time = data.getString(DBAdapter.COL_DATE);
+                    searcedImages.add(new Image(album, name, time, path, caption, tags));
+
+
+                }
+                final ArrayList<Image> searchedlist = new ArrayList<Image>(searcedImages);
+
+                searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
+                RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
+                recyclerView.setLayoutManager(mLayoutManager);
+                recyclerView.setItemAnimator(new DefaultItemAnimator());
+                recyclerView.setAdapter(searchAdapter);
+                recyclerView.removeOnItemTouchListener(touchListener);
+                touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                    @Override
+                    public void onClick(View view, int position) {
+
+                        Bundle bundle = new Bundle();
+                        bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
+                        bundle.putInt(CONSTANTS.POSITION, position);
+
+                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                        SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
+                        newFragment.setArguments(bundle);
+                        newFragment.show(ft, "slideshow");
+                    }
+
+                    @Override
+                    public void onLongClick(View view, int position) {
+
+                    }
+                });
+                recyclerView.addOnItemTouchListener(touchListener);
+                return false;
+            }
+        });
         return true;
     }
 
@@ -131,7 +220,8 @@ public class AlbumView extends AppCompatActivity {
             String name = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.TITLE));
 
 
-            Image image = new Image(albumName,name,timestamp,path,"");
+            Image image = new Image(albumName,name,timestamp,path,"","");
+
             images .add(image);
             mAdapter.notifyDataSetChanged();
             if(first)
@@ -145,4 +235,66 @@ public class AlbumView extends AppCompatActivity {
         cursor.close();
 
     }
+
+    @Override
+    public void onBackPressed() {
+        if(recyclerView.getAdapter()== mAdapter)
+        {
+            super.onBackPressed();
+            toolbar.setSubtitle(R.string.search_results);
+//            Intent i = new Intent(Intent.ACTION_MAIN);
+//            i.addCategory(Intent.CATEGORY_HOME);
+//            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//            startActivity(i);
+//            finish();
+//            System.exit(0);
+        }
+        else if (recyclerView.getAdapter()== searchAdapter)
+        {
+
+            toolbar.setSubtitle(album_name);
+
+            RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
+            recyclerView.setLayoutManager(mLayoutManager);
+            recyclerView.setItemAnimator(new DefaultItemAnimator());
+            recyclerView.setAdapter(mAdapter);
+            recyclerView.removeOnItemTouchListener(touchListener);
+
+            touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                @Override
+                public void onClick(View view, int position) {
+
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable(CONSTANTS.IMAGES, images);
+                    bundle.putInt(CONSTANTS.POSITION, position);
+
+                    FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                    SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
+                    newFragment.setArguments(bundle);
+                    newFragment.show(ft, "slideshow");
+                }
+
+                @Override
+                public void onLongClick(View view, int position) {
+
+                }
+            });
+            recyclerView.addOnItemTouchListener(touchListener);
+        }
+        else
+        {
+            toolbar.setSubtitle(album_name);
+            super.onBackPressed();
+        }
+    }
+
+    private void openDB() {
+        DB = new DBAdapter(this);
+        DB.open();
+    }
+    private void closeDB() {
+        DB.close();
+    }
+
+
 }

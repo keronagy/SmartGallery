@@ -12,18 +12,29 @@ public class Image implements Serializable{
     private String caption;
     private String path;
     private String time;
+    private String tags;
+
+
+//    public Image(String path, String name, String caption, String tags,String timestamp) {
+//        this.path = path;
+//        this.name = name;
+//        this.caption = caption;
+//        this.tags = tags;
+//        this.timestamp = timestamp;
+//        this.time = CONSTANTS.converToTime(timestamp);
+//    }
 
     public Image() {
     }
 
-    public Image(String albumName,String name, String timestamp,String path, String caption) {
+    public Image(String albumName,String name, String timestamp,String path, String caption,String tags) {
         this.albumName = albumName;
         this.name = name;
         this.timestamp = timestamp;
         this.caption = caption;
         this.path= path;
         this.time = CONSTANTS.converToTime(timestamp);
-
+        this.tags = tags;
     }
 
     public void setAlbumName(String albumName) {
@@ -71,5 +82,25 @@ public class Image implements Serializable{
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return "Image{" +
+                "name='" + name + '\'' +
+                ", albumName='" + albumName + '\'' +
+                ", timestamp='" + timestamp + '\'' +
+                ", caption='" + caption + '\'' +
+                ", path='" + path + '\'' +
+                ", time='" + time + '\'' +
+                '}';
+    }
+
+    public String getTags() {
+        return this.tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 }

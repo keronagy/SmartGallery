@@ -13,22 +13,28 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.SmartGallery.Adapters.AlbumAdapter;
+import com.example.SmartGallery.Adapters.SearchAdapter;
 import com.example.SmartGallery.Album;
 import com.example.SmartGallery.CONSTANTS;
-import com.example.SmartGallery.Adapters.AlbumAdapter;
+import com.example.SmartGallery.Database.DBAdapter;
+import com.example.SmartGallery.Image;
 import com.example.SmartGallery.R;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
@@ -37,12 +43,14 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -52,20 +60,34 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Album> albumList;
     private ProgressDialog pDialog;
     private AlbumAdapter mAdapter;
+    private SearchAdapter searchAdapter;
     private RecyclerView recyclerView;
     private Uri uri;
+    private Toolbar toolbar;
     static final int REQUEST_PERMISSION_KEY = 1;
     final int RequestPermissionCode=2;
+    DBAdapter DB;
+
+
+    RecyclerView.OnItemTouchListener touchListener;
+
+
+
+
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setSubtitle(R.string.albums);
-
+        openDB();
+        addAllPathstoDB();
         recyclerView = findViewById(R.id.recycler_view);
 
         pDialog = new ProgressDialog(this);
@@ -80,9 +102,7 @@ public class MainActivity extends AppCompatActivity {
         if(!CONSTANTS.hasPermissions(this, PERMISSIONS)){
             ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_PERMISSION_KEY);
         }
-
-
-        recyclerView.addOnItemTouchListener(new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+        touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
                 Intent intent = new Intent(MainActivity.this, AlbumView.class);
@@ -96,7 +116,9 @@ public class MainActivity extends AppCompatActivity {
             public void onLongClick(View view, int position) {
 
             }
-        }));
+        });
+
+        recyclerView.addOnItemTouchListener(touchListener);
 
         String API = loadSharedPref();
         if(API.equals(""))
@@ -111,9 +133,101 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        closeDB();
+        if (pDialog != null && pDialog.isShowing()) {
+            pDialog.cancel();
+        }
+    }
+
+    private void openDB() {
+        DB = new DBAdapter(this);
+        DB.open();
+    }
+    private void closeDB() {
+        DB.close();
+    }
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.setting,menu);
+        MenuItem search = menu.findItem(R.id.search_menu);
+        SearchView  searchView = (SearchView) search.getActionView();
+        search.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+
+            @Override
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                // Do whatever you need
+                return true; // KEEP IT TO TRUE OR IT DOESN'T OPEN !!
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                toolbar.setSubtitle(R.string.search_results);
+
+                return true; // OR FALSE IF YOU DIDN'T WANT IT TO CLOSE!
+            }
+        });
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+
+                Cursor data = DB.getAllRowsSorted();
+                HashSet<Image> searcedImages = new HashSet<>();
+
+                for (int i = 0; i < 10; i++) {
+
+                    data.moveToNext();
+                    String path = data.getString(DBAdapter.COL_PATH);
+                    File f = new File(path);
+                    String name = f.getName();
+                    String caption = data.getString(DBAdapter.COL_CAPTION);
+                    String album = data.getString(DBAdapter.COL_ALBUM);
+                    String tags = data.getString(DBAdapter.COL_TAGS);
+                    String time = data.getString(DBAdapter.COL_DATE);
+                    searcedImages.add(new Image(album,name,time,path,caption,tags));
+
+
+
+
+                }
+                final ArrayList<Image> searchedlist = new ArrayList <Image> (searcedImages);
+
+                searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
+                RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
+                recyclerView.setLayoutManager(mLayoutManager);
+                recyclerView.setItemAnimator(new DefaultItemAnimator());
+                recyclerView.setAdapter(searchAdapter);
+                recyclerView.removeOnItemTouchListener(touchListener);
+                touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                    @Override
+                    public void onClick(View view, int position) {
+
+                        Bundle bundle = new Bundle();
+                        bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
+                        bundle.putInt(CONSTANTS.POSITION, position);
+
+                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                        SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
+                        newFragment.setArguments(bundle);
+                        newFragment.show(ft, "slideshow");
+                    }
+
+                    @Override
+                    public void onLongClick(View view, int position) {
+
+                    }
+                });
+                recyclerView.addOnItemTouchListener(touchListener);
+                return false;
+            }
+        });
         return true;
     }
 
@@ -198,9 +312,54 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+    boolean twice;
 
+    @Override
+    public void onBackPressed() {
+        if(recyclerView.getAdapter()== mAdapter)
+        {
+            super.onBackPressed();
+            toolbar.setSubtitle(R.string.search_results);
+//            Intent i = new Intent(Intent.ACTION_MAIN);
+//            i.addCategory(Intent.CATEGORY_HOME);
+//            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//            startActivity(i);
+//            finish();
+//            System.exit(0);
+        }
+        else if (recyclerView.getAdapter()== searchAdapter)
+        {
 
+            toolbar.setSubtitle(R.string.albums);
 
+            RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
+            recyclerView.setLayoutManager(mLayoutManager);
+            recyclerView.setItemAnimator(new DefaultItemAnimator());
+            recyclerView.setAdapter(mAdapter);
+            recyclerView.removeOnItemTouchListener(touchListener);
+            touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                @Override
+                public void onClick(View view, int position) {
+                    Intent intent = new Intent(MainActivity.this, AlbumView.class);
+                    intent.putExtra(CONSTANTS.ALBUM_NAME, albumList.get(position).getName());
+                    intent.putExtra(CONSTANTS.ALBUM_PATH, albumList.get(position).getPath());
+                    startActivity(intent);
+
+                }
+
+                @Override
+                public void onLongClick(View view, int position) {
+
+                }
+            });
+            recyclerView.addOnItemTouchListener(touchListener);
+        }
+        else
+        {
+            toolbar.setSubtitle(R.string.albums);
+            super.onBackPressed();
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -217,13 +376,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (pDialog != null && pDialog.isShowing()) {
-            pDialog.cancel();
-        }
-    }
+
 
     private void saveSharedPref(String API)
     {
@@ -347,4 +500,85 @@ public class MainActivity extends AppCompatActivity {
             return data;
         }
     }
+
+    public void addAllPathstoDB() {
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+
+                Uri uriExternal = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                Uri uriInternal = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
+
+                String[] projection = {MediaStore.MediaColumns.DATA,
+                        MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.MediaColumns.DATE_MODIFIED, MediaStore.MediaColumns.TITLE};
+                Cursor cursorExternal = getContentResolver().query(uriExternal, projection, null, null, MediaStore.MediaColumns.DATE_MODIFIED + " DESC");
+                Cursor cursorInternal = getContentResolver().query(uriInternal, projection, null, null, MediaStore.MediaColumns.DATE_MODIFIED + " DESC");
+                Cursor URIcursor = new MergeCursor(new Cursor[]{cursorExternal, cursorInternal});
+                //check if there is data in DB
+                if (URIcursor.getCount() != 0) {
+                    Log.d(TAG, "found photos");
+                    long rowID;
+                    //add photos to database
+//                    Cursor cursor1 = DB.getAllRowsSorted();
+                    URIcursor.moveToNext();
+                    do {
+
+                        //ask about rowID (internal and external merge)
+                        String path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
+                        String albumName = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME));
+                        String timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
+                        rowID = DB.insertRow(path, null, null, timestamp,albumName);
+                        Log.d(TAG, "rowID: "+rowID);
+//                        String message = "";
+//
+//                        if (!cursor1.isClosed() && cursor1.moveToFirst()) {
+//                            // Process the data:
+//                            String path1 = cursor1.getString(DBAdapter.COL_PATH);
+//                            String caption = cursor1.getString(DBAdapter.COL_CAPTION);
+//                            String tags1 = cursor1.getString(DBAdapter.COL_TAGS);
+//                            String date1 = cursor1.getString(DBAdapter.COL_DATE);
+//                            message += "path=" + path1
+//                                    + ", caption=" + caption
+//                                    + ", tags1=" + tags1
+//                                    + ", date1=" + date1
+//                                    + "\n";
+//                            Log.d(TAG, message);
+//                        }
+//                        cursor1.close();
+
+
+                    } while (rowID != -1 && URIcursor.moveToNext());
+                    URIcursor.close();
+
+
+                    /*
+                    //check last date and path
+                    if (URIcursor.moveToFirst()) {
+                        String timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
+                        String path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
+                        String timestamp1 = DBcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
+                        String path1 = DBcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
+                        if(timestamp.equals(timestamp1) && path.equals(path1))
+                        {
+                            Log.d(TAG, "no new data");
+                        }
+                        else
+                        {
+                            //adding new data until reaching the time and path of the last photo in DB
+                            do  {
+                                timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
+                                path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
+                                DB.insertRow(path, null, null, timestamp);
+
+                            }while (URIcursor.moveToNext() && !URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)).equals(timestamp1)  && !URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)).equals(path1));
+                        }*/
+                } else {
+                    Log.d(TAG, "there is no photos on the phone");
+                }
+            }
+        };
+        thread.start();
+    }
+
+
 }

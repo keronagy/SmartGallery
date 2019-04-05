@@ -11,60 +11,63 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.example.SmartGallery.Album;
+import com.example.SmartGallery.Image;
 import com.example.SmartGallery.R;
 
 import java.io.File;
 import java.util.List;
 
-public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyViewHolder> {
+public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.MyViewHolder> {
 
-    private List<Album> albums;
+    private List<Image> images;
     private Context mContext;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public ImageView thumbnail;
-        public TextView albumName;
-        public TextView albumNum;
+        public TextView imgname;
+        public TextView imgcaption;
+        public TextView imgtags;
 
         public MyViewHolder(View view) {
             super(view);
-            thumbnail = view.findViewById(R.id.thumbnail);
-            albumName = view.findViewById(R.id.album_name);
-            albumNum = view.findViewById(R.id.album_count);
+            thumbnail = view.findViewById(R.id.search_image);
+            imgname = view.findViewById(R.id.search_name);
+            imgcaption = view.findViewById(R.id.search_caption);
+            imgtags = view.findViewById(R.id.search_tags);
         }
     }
 
 
-    public AlbumAdapter(Context context, List<Album> images) {
+    public SearchAdapter(Context context, List<Image> images) {
         mContext = context;
-        this.albums = images;
+        this.images = images;
     }
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.gallery_item, parent, false);
+                .inflate(R.layout.search_item, parent, false);
 
         return new MyViewHolder(itemView);
     }
 
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
-        Album album = albums.get(position);
+        Image image = images.get(position);
 
-        Glide.with(mContext).load(new File(album.getPath()))
+        Glide.with(mContext).load(new File(image.getPath()))
                 .thumbnail(0.5f)
                 .crossFade()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(holder.thumbnail);
-        holder.albumName.setText(album.getName());
-        holder.albumNum.setText(album.getCountPhoto());
+        holder.imgname.setText(image.getName());
+        holder.imgcaption.setText(image.getCaption());
+        holder.imgtags.setText(image.getTags());
     }
 
     @Override
     public int getItemCount() {
-        return albums.size();
+        return images.size();
     }
 
     public interface ClickListener {
@@ -76,9 +79,9 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyViewHolder
     public static class RecyclerTouchListener implements RecyclerView.OnItemTouchListener {
 
         private GestureDetector gestureDetector;
-        private AlbumAdapter.ClickListener clickListener;
+        private SearchAdapter.ClickListener clickListener;
 
-        public RecyclerTouchListener(Context context, final RecyclerView recyclerView, final AlbumAdapter.ClickListener clickListener) {
+        public RecyclerTouchListener(Context context, final RecyclerView recyclerView, final SearchAdapter.ClickListener clickListener) {
             this.clickListener = clickListener;
             gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
                 @Override

@@ -17,10 +17,6 @@ import com.example.SmartGallery.R;
 import java.io.File;
 import java.util.List;
 
-/**
- * Created by Lincoln on 31/03/16.
- */
-
 public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.MyViewHolder> {
 
     private List<Image> images;

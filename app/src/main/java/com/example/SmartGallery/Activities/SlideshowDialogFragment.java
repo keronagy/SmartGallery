@@ -47,7 +47,7 @@ public class SlideshowDialogFragment extends DialogFragment {
     private Button GetCaptionBtn;
     private TextView captionTxt;
     private String curposition;
-    static SlideshowDialogFragment newInstance() {
+    public static SlideshowDialogFragment newInstance() {
         SlideshowDialogFragment f = new SlideshowDialogFragment();
         return f;
     }
@@ -68,7 +68,7 @@ public class SlideshowDialogFragment extends DialogFragment {
             @Override
             public void onClick(View v) {
 
-                getCaptionFromServer();
+                getFromServer(CONSTANTS.DETECTION);
             }
         });
 
@@ -170,9 +170,9 @@ public class SlideshowDialogFragment extends DialogFragment {
         }
     }
 
-    public void getCaptionFromServer() {
+    public void getFromServer(String Service) {
 
-        new ServerConnection().execute( curposition);
+        new ServerConnection().execute(curposition,Service);
     }
 
     public Bitmap getBitmap(String path) {
@@ -187,22 +187,29 @@ public class SlideshowDialogFragment extends DialogFragment {
             return null;
         }
     }
-    private class ServerConnection extends AsyncTask<String, Void, String> {
+    private class ServerConnection extends AsyncTask<String, Void, String[]> {
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(String[] s) {
             super.onPostExecute(s);
-            Toast.makeText(mainthis, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
-            captionTxt.setText(s);
+            if (s[0].toLowerCase().contains("error".toLowerCase()))
+            {
+                Toast.makeText(mainthis, s[0], Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if(s[1].equals(curposition)) {
+                captionTxt.setText(s[0]);
+            }
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String[] doInBackground(String... params) {
 
             String encodedImage;
             ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
             Bitmap bmp =  getBitmap(images.get(Integer.parseInt(curposition)).getPath());
-            bmp.compress(Bitmap.CompressFormat.JPEG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+            bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
             byte[] b = byteArrayBitmapStream.toByteArray();
             encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
             JSONObject postData = new JSONObject();
@@ -216,7 +223,7 @@ public class SlideshowDialogFragment extends DialogFragment {
             String data = "";
             HttpURLConnection httpURLConnection = null;
             try {
-                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI).openConnection();
+                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI+params[1]).openConnection();
                 httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
                 httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
 
@@ -238,7 +245,7 @@ public class SlideshowDialogFragment extends DialogFragment {
                 }
                 images.get(Integer.parseInt(params[0])).setCaption(data);
             } catch (Exception e) {
-                data = "error connecting to server\n"+ e.getMessage();
+                data = "error connecting to server";
                 e.printStackTrace();
             } finally {
                 if (httpURLConnection != null) {
@@ -246,7 +253,7 @@ public class SlideshowDialogFragment extends DialogFragment {
                 }
             }
 
-            return data;
+            return new String[]{data,params[0]};
         }
     }
 
