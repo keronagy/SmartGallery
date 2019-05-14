@@ -27,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.SmartGallery.Adapters.AlbumAdapter;
@@ -36,6 +37,7 @@ import com.example.SmartGallery.CONSTANTS;
 import com.example.SmartGallery.Database.DBAdapter;
 import com.example.SmartGallery.Image;
 import com.example.SmartGallery.R;
+import com.example.SmartGallery.ServerConnectionService;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
@@ -67,16 +69,11 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PERMISSION_KEY = 1;
     final int RequestPermissionCode=2;
     DBAdapter DB;
+    private Button StartService;
 
 
     RecyclerView.OnItemTouchListener touchListener;
-
-
-
-
-
-
-
+    private Intent ServerSercvice ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,6 +126,15 @@ public class MainActivity extends AppCompatActivity {
         {
             CONSTANTS.SERVER_URI= API;
         }
+
+        StartService = findViewById(R.id.testService);
+        StartService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
+                startService(ServerSercvice);
+            }
+        });
 
     }
 
