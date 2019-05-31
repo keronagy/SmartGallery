@@ -83,12 +83,13 @@ public class MainActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setSubtitle(R.string.albums);
+        albumList = new ArrayList<>();
+
+
         openDB();
-        addAllPathstoDB();
         recyclerView = findViewById(R.id.recycler_view);
 
         pDialog = new ProgressDialog(this);
-        albumList = new ArrayList<>();
         mAdapter = new AlbumAdapter(getApplicationContext(), albumList);
 
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
@@ -227,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onLongClick(View view, int position) {
+                        Toast.makeText(MainActivity.this, "long click share "+ searchedlist.get(position).getName(), Toast.LENGTH_LONG).show();
 
                     }
                 });
@@ -300,6 +302,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     fetchAlbums();
+                    addAllPathstoDB();
                 } else
                 {
                     Toast.makeText(MainActivity.this, "You must accept permissions.", Toast.LENGTH_LONG).show();
@@ -371,17 +374,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-
         String[] PERMISSIONS = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
         if(!CONSTANTS.hasPermissions(this, PERMISSIONS)){
             ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_PERMISSION_KEY);
         }else{
             if(albumList.size()==0)
                 fetchAlbums();
+            addAllPathstoDB();
         }
+
+
 
     }
 
+    public void checkPermissions()
+    {
+
+    }
 
 
     private void saveSharedPref(String API)
