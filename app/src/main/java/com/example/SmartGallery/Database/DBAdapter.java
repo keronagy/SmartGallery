@@ -187,18 +187,57 @@ public class DBAdapter {
 	}
 
 	// Change an existing row to be equal to new data.
-	public boolean updateRow(String path, String caption, String tags,String date,String album) {
-		String where = KEY_PATH + "=" + path;
+//	public boolean updateRow(String path, String caption, String tags,String date,String album) {
+//		String where = KEY_PATH + "=" + path;
+//
+//		ContentValues newValues = new ContentValues();
+//		newValues.put(KEY_CAPTION, caption);
+//		newValues.put(KEY_TAGS, tags);
+//		newValues.put(KEY_DATE, date);
+//		newValues.put(KEY_ALBUM, album);
+//
+//		// Insert it into the database.
+//		return db.update(DATABASE_TABLE, newValues, where, null) != 0;
+//	}
 
-		ContentValues newValues = new ContentValues();
-		newValues.put(KEY_CAPTION, caption);
-		newValues.put(KEY_TAGS, tags);
-		newValues.put(KEY_DATE, date);
-		newValues.put(KEY_ALBUM, album);
+    //Row Updates
+    //1- update Caption Only
+    public boolean updateRowCaption(String path, String caption) {
+        String where = KEY_PATH + "=" + path;
 
-		// Insert it into the database.
-		return db.update(DATABASE_TABLE, newValues, where, null) != 0;
-	}
+        ContentValues newValues = new ContentValues();
+        newValues.put(KEY_CAPTION, caption);
+        // Insert it into the database.
+        return db.update(DATABASE_TABLE, newValues, where, null) != 0;
+    }
+
+    //2- update Tags only
+    public boolean updateRowTags(String path, String tags) {
+        String where = KEY_PATH + "=" + path;
+        ContentValues newValues = new ContentValues();
+        newValues.put(KEY_TAGS, tags);
+
+        // Insert it into the database.
+        return db.update(DATABASE_TABLE, newValues, where, null) != 0;
+    }
+
+    //3- update Tags and Caption
+    public boolean updateRow(String path, String caption, String tags) {
+        String where = KEY_PATH + "=" + path;
+
+        ContentValues newValues = new ContentValues();
+        newValues.put(KEY_CAPTION, caption);
+        newValues.put(KEY_TAGS, tags);
+
+        // Insert it into the database.
+        return db.update(DATABASE_TABLE, newValues, where, null) != 0;
+    }
+
+
+
+
+
+
     public static String SearchWhereClause(String search, String field, String and)
     {
         String[] splited = search.split("\\s+");

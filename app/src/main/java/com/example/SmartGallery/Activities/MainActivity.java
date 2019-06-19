@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 Cursor data = DB.getAllRowsSorted();
                 HashSet<Image> searcedImages = new HashSet<>();
 
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 3; i++) {
 
                     data.moveToNext();
                     String path = data.getString(DBAdapter.COL_PATH);
@@ -228,8 +228,15 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onLongClick(View view, int position) {
-                        Toast.makeText(MainActivity.this, "long click share "+ searchedlist.get(position).getName(), Toast.LENGTH_LONG).show();
+//                        Toast.makeText(MainActivity.this, "long click share "+ , Toast.LENGTH_LONG).show();
+                        Uri fileUri  = Uri.parse("file://"+searchedlist.get(position).getPath());
 
+                        //No need to do mimeType work or ext
+
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                        intent.setType("image/*");
+                        startActivity(Intent.createChooser(intent, "Share Image:"));
                     }
                 });
                 recyclerView.addOnItemTouchListener(touchListener);
@@ -565,6 +572,9 @@ public class MainActivity extends AppCompatActivity {
                     } while (rowID != -1 && URIcursor.moveToNext());
                     URIcursor.close();
 
+                    ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
+                    Log.d(TAG, "run: service about to be started");
+                    startService(ServerSercvice);
 
                     /*
                     //check last date and path

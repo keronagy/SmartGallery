@@ -97,7 +97,14 @@ public class AlbumView extends AppCompatActivity {
 
             @Override
             public void onLongClick(View view, int position) {
+                Uri fileUri  = Uri.parse("file://"+images.get(position).getPath());
 
+                //No need to do mimeType work or ext
+
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                intent.setType("image/*");
+                startActivity(Intent.createChooser(intent, "Share Image:"));
             }
         });
         recyclerView.addOnItemTouchListener(touchListener);
@@ -176,7 +183,14 @@ public class AlbumView extends AppCompatActivity {
 
                     @Override
                     public void onLongClick(View view, int position) {
+                        Uri fileUri  = Uri.parse("file://"+searchedlist.get(position).getPath());
 
+                        //No need to do mimeType work or ext
+
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                        intent.setType("image/*");
+                        startActivity(Intent.createChooser(intent, "Share Image:"));
                     }
                 });
                 recyclerView.addOnItemTouchListener(touchListener);
@@ -276,7 +290,14 @@ public class AlbumView extends AppCompatActivity {
 
                 @Override
                 public void onLongClick(View view, int position) {
+                    Uri fileUri  = Uri.parse("file://"+images.get(position).getPath());
 
+                    //No need to do mimeType work or ext
+
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                    intent.setType("image/*");
+                    startActivity(Intent.createChooser(intent, "Share Image:"));
                 }
             });
             recyclerView.addOnItemTouchListener(touchListener);

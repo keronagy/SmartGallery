@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CONSTANTS {
+
     public static final String ALBUM_NAME = "album_name";
     public static final String ALBUM_PATH = "album_path";
     public static final String IMAGES = "images";
@@ -17,12 +18,20 @@ public class CONSTANTS {
     public static final int COMPRESSION_QUALITY = 100;
 
 
+    //Notification Constants
+    public static final String CHANNEL_ID = "Service_Channel";
+    public static final String CHANNEL_NAME = "Server Connection";
+    public static final String CHANNEL_DESC = "Server Connection Details";
+    public static final String NOTIFICATION_TITLE = "Getting Caption and Tags";
+    public static final int NOTIFICATION_ID = 1;
 
 
     //Server Data
     public static String SERVER_URI = "http://192.168.1.5:5000";
-    public static String CAPTION = "/api/caption";
-    public static String DETECTION = "/api/detection";
+    public static final String CAPTION = "/api/caption";
+    public static final String DETECTION = "/api/detection";
+    public static final String RECEIVED_CAPTION_JSON = "caption";
+    public static final String RECEIVED_TAGS_JSON = "tags";
 
     public static final String IMAGE_POST_SERVER = "image";
     public static final String CONTENT_TYPE_STRING = "Content-Type";
