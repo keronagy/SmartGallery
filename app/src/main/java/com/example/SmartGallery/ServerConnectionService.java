@@ -3,6 +3,7 @@ package com.example.SmartGallery;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.IBinder;
@@ -12,12 +13,10 @@ import android.util.Base64;
 import android.util.Log;
 
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.SmartGallery.Database.DBAdapter;
 
 import org.json.JSONObject;
@@ -41,15 +40,16 @@ public class ServerConnectionService extends Service {
         Log.d(TAG, "onStartCommand: Started");
         notificationManager = NotificationManagerCompat.from(this);
         openDB();
+        showNotification();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
              //contact server and save in DB
-                showNotification();
+                getCaptionAndTag(CONSTANTS.CAPTION);
 
             }
-        });
+        }).run();
 //        stopSelf();
         return START_REDELIVER_INTENT; // to continue from where it is stopped and auto restart
 
@@ -84,74 +84,83 @@ public class ServerConnectionService extends Service {
 
 
 
-    public void getCaptionAndTag(final String Path, final String Service) {
-        String encodedImage;
-        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-        Bitmap bmp =  getBitmap(Path);
-        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-//        Bitmap bmp = BitmapFactory.decodeResource(getResources(),
-//                R.drawable.test);
-        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-        byte[] b = byteArrayBitmapStream.toByteArray();
-        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        JSONObject postData = new JSONObject();
-        try {
-            postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage);
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void getCaptionAndTag(final String Service) {
+        Cursor images = DB.getAllRowsNullCaptionAndTags();
+        String url = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).getString(CONSTANTS.APP_SERVER_PREF_API,CONSTANTS.APP_SERVER_PREF_API)+Service;
+        if(images==null)
+        {
+            stopSelf();
         }
+        do {
+            String Path = images.getString(DBAdapter.COL_PATH);
+            String encodedImage;
+            ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+            Bitmap bmp =  getBitmap(Path);
+            bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+            byte[] b = byteArrayBitmapStream.toByteArray();
+            encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+            JSONObject postData = new JSONObject();
+            try {
+                postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        String url = CONSTANTS.SERVER_URI+Service;
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
 
-                    switch (Service)
-                    {
-                        case CONSTANTS.CAPTION:
-                            DB.updateRowCaption(Path,response.getString(CONSTANTS.RECEIVED_CAPTION_JSON));
-                            break;
-                        case CONSTANTS.DETECTION:
-                            DB.updateRowTags(Path,response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
-                            break;
-                        case "both":
-                            DB.updateRow(Path,response.getString(CONSTANTS.RECEIVED_CAPTION_JSON),response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
-                            break;
-                    }
+            final JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(Object tag , JSONObject response) {
+                    try {
+                        String path = (String) tag;
+
+                        switch (Service)
+                        {
+
+                            case CONSTANTS.CAPTION:
+                                DB.updateRowCaption("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_CAPTION_JSON));
+                                break;
+                            case CONSTANTS.DETECTION:
+                                DB.updateRowTags(path,response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
+                                break;
+                            case "both":
+                                DB.updateRow(path,response.getString(CONSTANTS.RECEIVED_CAPTION_JSON),response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
+                                break;
+                        }
 //                    Toast.makeText(MainActivity.this, response.getString("caption"), Toast.LENGTH_LONG).show();
 //                    Log.d("eeeeeeeee", "onResponse: "+response.getString("caption"));
 
 
-                } catch (Exception ex) {
-//                    Toast.makeText(MainActivity.this, "error", Toast.LENGTH_SHORT).show();
+                    } catch (Exception ex) {
+                        Log.d(TAG, "onResponse: error"+ ex.getMessage());
+// Toast.makeText(ServerConnectionService.this, "error", Toast.LENGTH_LONG).show();
+                    }
                 }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
 //                Toast.makeText(MainActivity.this, "error ya 3abeeet\n"+ error.toString(), Toast.LENGTH_SHORT).show();
-                Log.d("eeeeeee", "onErrorResponse: "+ error.toString());
-            }
-        });
-        request.setRetryPolicy(new RetryPolicy() {
-            @Override
-            public int getCurrentTimeout() {
-                return 50000;
-            }
+                    Log.d("eeeeeee", "onErrorResponse: "+ error.toString());
+                }
+            });
+            request.setRetryPolicy(new RetryPolicy() {
+                @Override
+                public int getCurrentTimeout() {
+                    return 60000;
+                }
 
-            @Override
-            public int getCurrentRetryCount() {
-                return 50000;
-            }
+                @Override
+                public int getCurrentRetryCount() {
+                    return 60000;
+                }
 
-            @Override
-            public void retry(VolleyError error) throws VolleyError {
+                @Override
+                public void retry(VolleyError error) throws VolleyError {
 
-            }
-        });
-        requestQueue.add(request);
+                }
+            });
+            request.setTag(Path);
+            ServiceQueueSingleton.getInstance(this).addToRequestQueue(request);
+        }while (images.moveToNext());
 
     }
 

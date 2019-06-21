@@ -184,62 +184,64 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String s) {
-
-                Cursor data = DB.getAllRowsSorted();
+                if(s.equals("")) return false;
+                Cursor data = DB.getRowByCaption(s);
                 HashSet<Image> searcedImages = new HashSet<>();
-
-                for (int i = 0; i < 3; i++) {
-
-                    data.moveToNext();
-                    String path = data.getString(DBAdapter.COL_PATH);
-                    File f = new File(path);
-                    String name = f.getName();
-                    String caption = data.getString(DBAdapter.COL_CAPTION);
-                    String album = data.getString(DBAdapter.COL_ALBUM);
-                    String tags = data.getString(DBAdapter.COL_TAGS);
-                    String time = data.getString(DBAdapter.COL_DATE);
-                    searcedImages.add(new Image(album,name,time,path,caption,tags));
+                if (data != null) {
+                    data.moveToFirst();
+                    for (int i = 0; i < data.getCount(); i++) {
 
 
+                        String path = data.getString(DBAdapter.COL_PATH);
+                        File f = new File(path);
+                        String name = f.getName();
+                        String caption = data.getString(DBAdapter.COL_CAPTION);
+                        String album = data.getString(DBAdapter.COL_ALBUM);
+                        String tags = data.getString(DBAdapter.COL_TAGS);
+                        String time = data.getString(DBAdapter.COL_DATE);
+                        searcedImages.add(new Image(album, name, time, path, caption, tags));
+                        data.moveToNext();
 
+
+                    }
+                    final ArrayList<Image> searchedlist = new ArrayList<Image>(searcedImages);
+
+                    searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
+                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
+                    recyclerView.setLayoutManager(mLayoutManager);
+                    recyclerView.setItemAnimator(new DefaultItemAnimator());
+                    recyclerView.setAdapter(searchAdapter);
+                    recyclerView.removeOnItemTouchListener(touchListener);
+                    touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                        @Override
+                        public void onClick(View view, int position) {
+
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
+                            bundle.putInt(CONSTANTS.POSITION, position);
+
+                            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                            SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
+                            newFragment.setArguments(bundle);
+                            newFragment.show(ft, "slideshow");
+                        }
+
+                        @Override
+                        public void onLongClick(View view, int position) {
+//                        Toast.makeText(MainActivity.this, "long click share "+ , Toast.LENGTH_LONG).show();
+                            Uri fileUri = Uri.parse("file://" + searchedlist.get(position).getPath());
+
+                            //No need to do mimeType work or ext
+
+                            Intent intent = new Intent(Intent.ACTION_SEND);
+                            intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                            intent.setType("image/*");
+                            startActivity(Intent.createChooser(intent, "Share Image:"));
+                        }
+                    });
+                    recyclerView.addOnItemTouchListener(touchListener);
 
                 }
-                final ArrayList<Image> searchedlist = new ArrayList <Image> (searcedImages);
-
-                searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
-                RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
-                recyclerView.setLayoutManager(mLayoutManager);
-                recyclerView.setItemAnimator(new DefaultItemAnimator());
-                recyclerView.setAdapter(searchAdapter);
-                recyclerView.removeOnItemTouchListener(touchListener);
-                touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
-                    @Override
-                    public void onClick(View view, int position) {
-
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
-                        bundle.putInt(CONSTANTS.POSITION, position);
-
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
-                        newFragment.setArguments(bundle);
-                        newFragment.show(ft, "slideshow");
-                    }
-
-                    @Override
-                    public void onLongClick(View view, int position) {
-//                        Toast.makeText(MainActivity.this, "long click share "+ , Toast.LENGTH_LONG).show();
-                        Uri fileUri  = Uri.parse("file://"+searchedlist.get(position).getPath());
-
-                        //No need to do mimeType work or ext
-
-                        Intent intent = new Intent(Intent.ACTION_SEND);
-                        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
-                        intent.setType("image/*");
-                        startActivity(Intent.createChooser(intent, "Share Image:"));
-                    }
-                });
-                recyclerView.addOnItemTouchListener(touchListener);
                 return false;
             }
         });

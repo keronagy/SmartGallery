@@ -124,6 +124,39 @@ public class DBAdapter {
 		return c;
 	}
 
+	// Return all rows in the database.
+	public Cursor getAllRowsNullCaption() {
+		String where = KEY_CAPTION + " is null";
+		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
+				where, null, null, null, null, null);
+		if (c != null) {
+			c.moveToFirst();
+		}
+		return c;
+	}
+
+	// Return all rows in the database.
+	public Cursor getAllRowsNullTag() {
+		String where = KEY_TAGS + " is null";
+		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
+				where, null, null, null, null, null);
+		if (c != null) {
+			c.moveToFirst();
+		}
+		return c;
+	}
+
+    // Return all rows in the database.
+    public Cursor getAllRowsNullCaptionAndTags() {
+        String where = KEY_CAPTION + " IS null AND " + KEY_TAGS + " IS null";
+        Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
+                where, null, null, null, null, null);
+        if (c != null) {
+            c.moveToFirst();
+        }
+        return c;
+    }
+
     public Cursor getAllRowsSorted() {
         String where = null;
         Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
@@ -245,15 +278,15 @@ public class DBAdapter {
         for (int i = 0; i < splited.length; i++) {
             if(i==0 && splited.length ==1)
             {
-                like += field + " LIKE %" + splited[i] + "%";
+                like += field + " LIKE \"%" + splited[i] + "%\"";
             }
             else if(i == splited.length-1)
             {
-                like += field + " LIKE %" + splited[i] + "%";
+                like += field + " LIKE \"%" + splited[i] + "%\"";
             }
             else
             {
-                like += field + " LIKE %" + splited[i] + "% "+and+" ";
+                like += field + " LIKE \"%" + splited[i] + "%\" "+and+" ";
             }
 
         }
