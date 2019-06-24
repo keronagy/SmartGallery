@@ -540,10 +540,8 @@ public class MainActivity extends AppCompatActivity {
         Thread thread = new Thread() {
             @Override
             public void run() {
-
                 Uri uriExternal = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
                 Uri uriInternal = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
-
                 String[] projection = {MediaStore.MediaColumns.DATA,
                         MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.MediaColumns.DATE_MODIFIED, MediaStore.MediaColumns.TITLE};
                 Cursor cursorExternal = getContentResolver().query(uriExternal, projection, null, null, MediaStore.MediaColumns.DATE_MODIFIED + " DESC");
@@ -554,62 +552,18 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "found photos");
                     long rowID;
                     //add photos to database
-//                    Cursor cursor1 = DB.getAllRowsSorted();
                     URIcursor.moveToNext();
                     do {
-
                         //ask about rowID (internal and external merge)
                         String path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
                         String albumName = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME));
                         String timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
                         rowID = DB.insertRow(path, null, null, timestamp,albumName);
                         Log.d(TAG, "rowID: "+rowID);
-//                        String message = "";
-//
-//                        if (!cursor1.isClosed() && cursor1.moveToFirst()) {
-//                            // Process the data:
-//                            String path1 = cursor1.getString(DBAdapter.COL_PATH);
-//                            String caption = cursor1.getString(DBAdapter.COL_CAPTION);
-//                            String tags1 = cursor1.getString(DBAdapter.COL_TAGS);
-//                            String date1 = cursor1.getString(DBAdapter.COL_DATE);
-//                            message += "path=" + path1
-//                                    + ", caption=" + caption
-//                                    + ", tags1=" + tags1
-//                                    + ", date1=" + date1
-//                                    + "\n";
-//                            Log.d(TAG, message);
-//                        }
-//                        cursor1.close();
-
-
-                    } while (rowID != -1 && URIcursor.moveToNext());
+                    } while (URIcursor.moveToNext());
                     URIcursor.close();
-
-
                     Log.d(TAG, "run: service about to be started");
                     startService(ServerSercvice);
-
-                    /*
-                    //check last date and path
-                    if (URIcursor.moveToFirst()) {
-                        String timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
-                        String path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
-                        String timestamp1 = DBcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
-                        String path1 = DBcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
-                        if(timestamp.equals(timestamp1) && path.equals(path1))
-                        {
-                            Log.d(TAG, "no new data");
-                        }
-                        else
-                        {
-                            //adding new data until reaching the time and path of the last photo in DB
-                            do  {
-                                timestamp = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
-                                path = URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
-                                DB.insertRow(path, null, null, timestamp);
-
-                            }while (URIcursor.moveToNext() && !URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)).equals(timestamp1)  && !URIcursor.getString(URIcursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)).equals(path1));
-                        }*/
                 } else {
                     Log.d(TAG, "there is no photos on the phone");
                 }
@@ -617,6 +571,5 @@ public class MainActivity extends AppCompatActivity {
         };
         thread.start();
     }
-
 
 }
