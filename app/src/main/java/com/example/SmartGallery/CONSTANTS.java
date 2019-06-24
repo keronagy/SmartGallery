@@ -2,9 +2,17 @@ package com.example.SmartGallery;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
+import android.util.Base64;
 
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,9 +35,10 @@ public class CONSTANTS {
 
 
     //Server Data
-    public static String SERVER_URI = "http://192.168.1.5:5000";
+    public static String SERVER_URI = "http://192.168.43.214:5000";
     public static final String CAPTION = "/api/caption";
     public static final String DETECTION = "/api/detection";
+    public static final String CAPTION_DTECTION = "/api/image";
     public static final String RECEIVED_CAPTION_JSON = "caption";
     public static final String RECEIVED_TAGS_JSON = "tags";
     public static final String IMAGE_POST_SERVER = "image";
@@ -47,6 +56,10 @@ public class CONSTANTS {
     public static final String SEARCH_BY_TAGS= "Objects";
     public static final String SEARCH_BY_CAPTIONS= "Captions";
 
+    //BroadCast Receiver Constants
+    public static final String BROADCAST_MSG = "queue_status";
+    public static final String PAUSE_QUEUE= "PAUSE_queue";
+    public static final String RESUME_QUEUE= "resume_queue";
 
 
     public static String converToTime(String timestamp)
@@ -67,8 +80,35 @@ public class CONSTANTS {
         }
         return true;
     }
+    public static JSONObject CreateJsonObject(String path)
+    {
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+        Bitmap bmp =  getBitmap(path);
+        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        JSONObject postData = new JSONObject();
+        try {
+            postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return postData;
+    }
 
-
+    public static Bitmap getBitmap(String path) {
+        try {
+            File f = new File(path);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+            return bitmap;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 
 

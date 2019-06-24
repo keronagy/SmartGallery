@@ -1,6 +1,7 @@
 package com.example.SmartGallery;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -37,6 +38,7 @@ public class ServiceQueueSingleton {
 
     public void addToRequestQueue(Request request)
     {
+        Log.d("eeeeeeee", "addToRequestQueue: adding new one");
         requestQueue.add(request);
     }
     public void stopRequestQueue()
@@ -46,6 +48,10 @@ public class ServiceQueueSingleton {
     public void startRequestQueue()
     {
         requestQueue.start();
+    }
+    public void cancelRequestByTag(String Tag)
+    {
+        requestQueue.cancelAll(Tag);
     }
 
 }

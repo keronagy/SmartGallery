@@ -3,6 +3,7 @@ package com.example.SmartGallery.Activities;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.MergeCursor;
 import android.net.Uri;
@@ -142,58 +143,76 @@ public class AlbumView extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String s) {
 
-                Cursor data = DB.getAllRowsSorted();
+                if(s.equals("")) return false;
+
+                SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
+                String SearchBy = sharedPreferences.getString(CONSTANTS.SEARCH_BY,CONSTANTS.SEARCH_BY_DEFAULT);
+                Cursor data = null;
+                if(SearchBy.equals(CONSTANTS.SEARCH_BY_CAPTIONS))
+                {
+                    data = DB.getRowByCaptionAndAlbum(s,album_name);
+                }
+                else if(SearchBy.equals(CONSTANTS.SEARCH_BY_TAGS))
+                {
+                    data = DB.getRowByTagAndAlbum(s,album_name);
+                }
+
                 HashSet<Image> searcedImages = new HashSet<>();
+                if (data != null) {
+                    data.moveToFirst();
+                    for (int i = 0; i < data.getCount(); i++) {
 
-                for (int i = 0; i < 10; i++) {
 
-                    data.moveToNext();
-                    String path = data.getString(DBAdapter.COL_PATH);
-                    File f = new File(path);
-                    String name = f.getName();
-                    String caption = data.getString(DBAdapter.COL_CAPTION);
-                    String album = data.getString(DBAdapter.COL_ALBUM);
-                    String tags = data.getString(DBAdapter.COL_TAGS);
-                    String time = data.getString(DBAdapter.COL_DATE);
-                    searcedImages.add(new Image(album, name, time, path, caption, tags));
+                        String path = data.getString(DBAdapter.COL_PATH);
+                        File f = new File(path);
+                        String name = f.getName();
+                        String caption = data.getString(DBAdapter.COL_CAPTION);
+                        String album = data.getString(DBAdapter.COL_ALBUM);
+                        String tags = data.getString(DBAdapter.COL_TAGS);
+                        String time = data.getString(DBAdapter.COL_DATE);
+                        searcedImages.add(new Image(album, name, time, path, caption, tags));
+                        data.moveToNext();
 
+
+                    }
+                    final ArrayList<Image> searchedlist = new ArrayList<Image>(searcedImages);
+
+                    searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
+                    RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
+                    recyclerView.setLayoutManager(mLayoutManager);
+                    recyclerView.setItemAnimator(new DefaultItemAnimator());
+                    recyclerView.setAdapter(searchAdapter);
+                    recyclerView.removeOnItemTouchListener(touchListener);
+                    touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
+                        @Override
+                        public void onClick(View view, int position) {
+
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
+                            bundle.putInt(CONSTANTS.POSITION, position);
+
+                            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                            SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
+                            newFragment.setArguments(bundle);
+                            newFragment.show(ft, "slideshow");
+                        }
+
+                        @Override
+                        public void onLongClick(View view, int position) {
+//                        Toast.makeText(MainActivity.this, "long click share "+ , Toast.LENGTH_LONG).show();
+                            Uri fileUri = Uri.parse("file://" + searchedlist.get(position).getPath());
+
+                            //No need to do mimeType work or ext
+
+                            Intent intent = new Intent(Intent.ACTION_SEND);
+                            intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+                            intent.setType("image/*");
+                            startActivity(Intent.createChooser(intent, "Share Image:"));
+                        }
+                    });
+                    recyclerView.addOnItemTouchListener(touchListener);
 
                 }
-                final ArrayList<Image> searchedlist = new ArrayList<Image>(searcedImages);
-
-                searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
-                RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
-                recyclerView.setLayoutManager(mLayoutManager);
-                recyclerView.setItemAnimator(new DefaultItemAnimator());
-                recyclerView.setAdapter(searchAdapter);
-                recyclerView.removeOnItemTouchListener(touchListener);
-                touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
-                    @Override
-                    public void onClick(View view, int position) {
-
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
-                        bundle.putInt(CONSTANTS.POSITION, position);
-
-                        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                        SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
-                        newFragment.setArguments(bundle);
-                        newFragment.show(ft, "slideshow");
-                    }
-
-                    @Override
-                    public void onLongClick(View view, int position) {
-                        Uri fileUri  = Uri.parse("file://"+searchedlist.get(position).getPath());
-
-                        //No need to do mimeType work or ext
-
-                        Intent intent = new Intent(Intent.ACTION_SEND);
-                        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
-                        intent.setType("image/*");
-                        startActivity(Intent.createChooser(intent, "Share Image:"));
-                    }
-                });
-                recyclerView.addOnItemTouchListener(touchListener);
                 return false;
             }
         });

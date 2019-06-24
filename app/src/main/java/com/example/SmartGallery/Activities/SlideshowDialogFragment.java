@@ -1,38 +1,36 @@
 package com.example.SmartGallery.Activities;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.SmartGallery.CONSTANTS;
+import com.example.SmartGallery.Database.DBAdapter;
 import com.example.SmartGallery.Image;
+import com.example.SmartGallery.ManualQueueSingleton;
 import com.example.SmartGallery.R;
+import com.example.SmartGallery.ServiceQueueSingleton;
 
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 
 
@@ -46,7 +44,9 @@ public class SlideshowDialogFragment extends DialogFragment {
     private int selectedPosition = 0;
     private Button GetCaptionBtn;
     private TextView captionTxt;
+    private TextView tagsTxt;
     private String curposition;
+    DBAdapter DB;
     public static SlideshowDialogFragment newInstance() {
         SlideshowDialogFragment f = new SlideshowDialogFragment();
         return f;
@@ -57,6 +57,7 @@ public class SlideshowDialogFragment extends DialogFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.image_slider, container, false);
+        openDB();
         viewPager = v.findViewById(R.id.viewpager);
         lblCount = v.findViewById(R.id.lbl_count);
         lblTitle =  v.findViewById(R.id.title);
@@ -64,11 +65,12 @@ public class SlideshowDialogFragment extends DialogFragment {
         GetCaptionBtn = v.findViewById(R.id.caption_btn);
         mainthis = getActivity();
         captionTxt = v.findViewById(R.id.caption_txt);
+        tagsTxt = v.findViewById(R.id.tags_txt);
         GetCaptionBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                getFromServer(CONSTANTS.DETECTION);
+                getFromServer(CONSTANTS.CAPTION_DTECTION);
             }
         });
 
@@ -82,6 +84,19 @@ public class SlideshowDialogFragment extends DialogFragment {
         setCurrentItem(selectedPosition);
 
         return v;
+    }
+    private void openDB() {
+        DB = new DBAdapter(this.getContext());
+        DB.open();
+    }
+    private void closeDB() {
+        DB.close();
+    }
+
+    @Override
+    public void onDestroy() {
+        closeDB();
+        super.onDestroy();
     }
 
     @Override
@@ -118,9 +133,26 @@ public class SlideshowDialogFragment extends DialogFragment {
         lblCount.setText((position + 1) + " of " + images.size());
         curposition = position+"";
         Image image = images.get(position);
-        lblTitle.setText(image.getName());
-        lblDate.setText(image.getTime());
-        captionTxt.setText(image.getCaption());
+        String path = image.getPath();
+        Cursor c = DB.getRow(path);
+        c.moveToFirst();
+        File f = new File(path);
+        String name = f.getName();
+        lblTitle.setText(name);
+        lblDate.setText(CONSTANTS.converToTime(c.getString(DBAdapter.COL_DATE)));
+        String Caption = c.getString(DBAdapter.COL_CAPTION);
+        String Tags = c.getString(DBAdapter.COL_TAGS);
+        if(Caption==null || Tags== null)
+        {
+            GetCaptionBtn.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            GetCaptionBtn.setVisibility(View.GONE);
+            captionTxt.setText(Caption);
+            tagsTxt.setText(Tags);
+        }
+
     }
 
 
@@ -170,92 +202,86 @@ public class SlideshowDialogFragment extends DialogFragment {
         }
     }
 
-    public void getFromServer(String Service) {
+    public void getFromServer(final String Service) {
 
-        new ServerConnection().execute(curposition,Service);
-    }
+        String Path= images.get(Integer.parseInt(curposition)).getPath();
+        JSONObject postData = CONSTANTS.CreateJsonObject(Path);
+        String url = getContext().getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).getString(CONSTANTS.APP_SERVER_PREF_API,CONSTANTS.APP_SERVER_PREF_API)+Service;
+        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(Object tag , JSONObject response) {
+                try {
+                    String path = (String) tag;
+                    if(!DB.isOpen())
+                    {
+                        DB.open();
+                    }
+                    switch (Service)
+                    {
 
-    public Bitmap getBitmap(String path) {
-        try {
-            File f = new File(path);
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-            return bitmap;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-    private class ServerConnection extends AsyncTask<String, Void, String[]> {
+                        case CONSTANTS.CAPTION:
+                            DB.updateRowCaption("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_CAPTION_JSON));
+                            break;
+                        case CONSTANTS.DETECTION:
+                            DB.updateRowTags("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
+                            break;
+                        case CONSTANTS.CAPTION_DTECTION:
+                            String Caption = response.getString(CONSTANTS.RECEIVED_CAPTION_JSON);
+                            String Tags = response.getString(CONSTANTS.RECEIVED_TAGS_JSON);
+                            DB.updateRow("\""+path+"\"",Caption,Tags);
+                            if(images.get(Integer.parseInt(curposition)).getPath().equals(tag))
+                            {
+                                captionTxt.setText(Caption);
+                                tagsTxt.setText(Tags);
+                            }
+                            break;
+                    }
+                    ServiceQueueSingleton.getInstance(getContext()).startRequestQueue();
 
-        @Override
-        protected void onPostExecute(String[] s) {
-            super.onPostExecute(s);
-            if (s[0].toLowerCase().contains("error".toLowerCase()))
-            {
-                Toast.makeText(mainthis, s[0], Toast.LENGTH_LONG).show();
-                return;
-            }
+                } catch (Exception ex) {
+                    ServiceQueueSingleton.getInstance(getContext()).startRequestQueue();
 
-            if(s[1].equals(curposition)) {
-                captionTxt.setText(s[0]);
-            }
-        }
-
-        @Override
-        protected String[] doInBackground(String... params) {
-
-            String encodedImage;
-            ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-            Bitmap bmp =  getBitmap(images.get(Integer.parseInt(curposition)).getPath());
-            bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-            byte[] b = byteArrayBitmapStream.toByteArray();
-            encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-            JSONObject postData = new JSONObject();
-            try{
-                postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-
-            String data = "";
-            HttpURLConnection httpURLConnection = null;
-            try {
-                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI+params[1]).openConnection();
-                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
-                httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
-
-                httpURLConnection.setDoOutput(true);
-
-                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
-                wr.writeBytes(postData.toString());
-                wr.flush();
-                wr.close();
-
-                InputStream in = httpURLConnection.getInputStream();
-                InputStreamReader inputStreamReader = new InputStreamReader(in);
-
-                int inputStreamData = inputStreamReader.read();
-                while (inputStreamData != -1) {
-                    char current = (char) inputStreamData;
-                    inputStreamData = inputStreamReader.read();
-                    data += current;
-                }
-                images.get(Integer.parseInt(params[0])).setCaption(data);
-            } catch (Exception e) {
-                data = "error connecting to server";
-                e.printStackTrace();
-            } finally {
-                if (httpURLConnection != null) {
-                    httpURLConnection.disconnect();
+                    Log.d(TAG, "onResponse: error"+ ex.getMessage());
                 }
             }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("eeeeeee", "onErrorResponse: "+ error.toString());
+                ServiceQueueSingleton.getInstance(getContext()).startRequestQueue();
 
-            return new String[]{data,params[0]};
-        }
+            }
+        });
+        request.setRetryPolicy(new RetryPolicy() {
+            @Override
+            public int getCurrentTimeout() {
+                return 300000;
+            }
+
+            @Override
+            public int getCurrentRetryCount() {
+                return 50;
+            }
+
+            @Override
+            public void retry(VolleyError error) throws VolleyError {
+
+            }
+        });
+        request.setTag(Path);
+        Context context = getContext();
+        ServiceQueueSingleton.getInstance(context).stopRequestQueue();
+        ServiceQueueSingleton.getInstance(context).cancelRequestByTag(Path);
+        ManualQueueSingleton.getInstance(context).addToRequestQueue(request);
+
     }
+
+
+
+
+
+
+
 
 
 

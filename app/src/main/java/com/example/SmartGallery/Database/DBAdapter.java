@@ -169,7 +169,7 @@ public class DBAdapter {
 
 	// Get a specific row (by path)
 	public Cursor getRow(String path) {
-		String where = KEY_PATH + "=" + path;
+		String where = KEY_PATH + "=\"" + path+"\"";
 		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS, 
 						where, null, null, null, null, null);
 		if (c != null) {
@@ -190,7 +190,7 @@ public class DBAdapter {
 	}
 	// Get a specific row (by Caption)
 	public Cursor getRowByCaption(String caption) {
-		String where = SearchWhereClause(caption,KEY_CAPTION,"OR");
+		String where = SearchWhereClause(caption,KEY_CAPTION,"AND");
 		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
 						where, null, null, null, null, null);
 		if (c != null) {
@@ -210,7 +210,7 @@ public class DBAdapter {
 	}
 	// Get a specific row (by Caption And Album)
 	public Cursor getRowByCaptionAndAlbum(String caption, String album) {
-		String where = KEY_ALBUM +" = \""+ album + "\" AND "+SearchWhereClause(caption,KEY_TAGS,"OR");
+		String where = KEY_ALBUM +" = \""+ album + "\" AND "+SearchWhereClause(caption,KEY_CAPTION,"AND");
 		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
 						where, null, null, null, null, null);
 		if (c != null) {
@@ -291,6 +291,11 @@ public class DBAdapter {
 
         }
         return like;
+    }
+
+    public boolean isOpen()
+    {
+        return db.isOpen();
     }
 
 	

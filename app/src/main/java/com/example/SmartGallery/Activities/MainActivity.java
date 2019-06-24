@@ -127,12 +127,11 @@ public class MainActivity extends AppCompatActivity {
         {
             CONSTANTS.SERVER_URI= API;
         }
-
+        ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
         StartService = findViewById(R.id.testService);
         StartService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
                 startService(ServerSercvice);
             }
         });
@@ -185,7 +184,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String s) {
                 if(s.equals("")) return false;
-                Cursor data = DB.getRowByCaption(s);
+
+                SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
+                String SearchBy = sharedPreferences.getString(CONSTANTS.SEARCH_BY,CONSTANTS.SEARCH_BY_DEFAULT);
+                Cursor data = null;
+                if(SearchBy.equals(CONSTANTS.SEARCH_BY_CAPTIONS))
+                {
+                    data = DB.getRowByCaption(s);
+                }
+                else if(SearchBy.equals(CONSTANTS.SEARCH_BY_TAGS))
+                {
+                    data = DB.getRowByTag(s);
+                }
+
                 HashSet<Image> searcedImages = new HashSet<>();
                 if (data != null) {
                     data.moveToFirst();
@@ -574,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
                     } while (rowID != -1 && URIcursor.moveToNext());
                     URIcursor.close();
 
-                    ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
+
                     Log.d(TAG, "run: service about to be started");
                     startService(ServerSercvice);
 
