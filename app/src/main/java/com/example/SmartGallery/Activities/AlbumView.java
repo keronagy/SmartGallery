@@ -37,35 +37,25 @@ import java.util.HashSet;
 
 public class AlbumView extends AppCompatActivity {
 
-    private String TAG = MainActivity.class.getSimpleName();
-    private static final String endpoint = "https://api.androidhive.info/json/glide.json";
     private ArrayList<Image> images;
     private ProgressDialog pDialog;
     private ImagesAdapter mAdapter;
     private RecyclerView recyclerView;
-    static final int REQUEST_PERMISSION_KEY = 1;
+    private static final int REQUEST_PERMISSION_KEY = 1;
     private String album_name="";
-    DBAdapter DB;
-
+    private DBAdapter DB;
     private SearchAdapter searchAdapter;
     private Toolbar toolbar;
-
-    RecyclerView.OnItemTouchListener touchListener;
-
+    private RecyclerView.OnItemTouchListener touchListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         openDB();
-
-
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-
-
+        recyclerView = findViewById(R.id.recycler_view);
         pDialog = new ProgressDialog(this);
         images = new ArrayList<>();
         mAdapter = new ImagesAdapter(getApplicationContext(), images);
@@ -79,8 +69,6 @@ public class AlbumView extends AppCompatActivity {
         if(!CONSTANTS.hasPermissions(this, PERMISSIONS)){
             ActivityCompat.requestPermissions(this, PERMISSIONS, REQUEST_PERMISSION_KEY);
         }
-
-
 
         touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
             @Override
@@ -109,7 +97,6 @@ public class AlbumView extends AppCompatActivity {
             }
         });
         recyclerView.addOnItemTouchListener(touchListener);
-
         fetchImages();
     }
 
@@ -232,29 +219,20 @@ public class AlbumView extends AppCompatActivity {
     private void fetchImages() {
         pDialog.setMessage("Loading Photos");
         pDialog.show();
-
         Uri uriExternal = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriInternal = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
-
         String[] projection = {MediaStore.MediaColumns.DATA,
                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.MediaColumns.DATE_MODIFIED,MediaStore.MediaColumns.TITLE};
         Cursor cursorExternal = getContentResolver().query(uriExternal, projection, "bucket_display_name = \"" + album_name + "\"", null, MediaStore.MediaColumns.DATE_MODIFIED+" DESC");
         Cursor cursorInternal = getContentResolver().query(uriInternal, projection, "bucket_display_name = \"" + album_name + "\"", null, MediaStore.MediaColumns.DATE_MODIFIED+" DESC");
         Cursor cursor = new MergeCursor(new Cursor[]{cursorExternal, cursorInternal});
-
-
         boolean first = true;
         while (cursor.moveToNext()) {
-
-
             String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
             String albumName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME));
             String timestamp = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
             String name = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.TITLE));
-
-
             Image image = new Image(albumName,name,timestamp,path,"","");
-
             images .add(image);
             mAdapter.notifyDataSetChanged();
             if(first)
@@ -263,10 +241,7 @@ public class AlbumView extends AppCompatActivity {
                 pDialog.dismiss();
             }
         }
-
-
         cursor.close();
-
     }
 
     @Override
@@ -284,23 +259,18 @@ public class AlbumView extends AppCompatActivity {
         }
         else if (recyclerView.getAdapter()== searchAdapter)
         {
-
             toolbar.setSubtitle(album_name);
-
             RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
             recyclerView.setLayoutManager(mLayoutManager);
             recyclerView.setItemAnimator(new DefaultItemAnimator());
             recyclerView.setAdapter(mAdapter);
             recyclerView.removeOnItemTouchListener(touchListener);
-
             touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
                 @Override
                 public void onClick(View view, int position) {
-
                     Bundle bundle = new Bundle();
                     bundle.putSerializable(CONSTANTS.IMAGES, images);
                     bundle.putInt(CONSTANTS.POSITION, position);
-
                     FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                     SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
                     newFragment.setArguments(bundle);
@@ -312,7 +282,6 @@ public class AlbumView extends AppCompatActivity {
                     Uri fileUri  = Uri.parse("file://"+images.get(position).getPath());
 
                     //No need to do mimeType work or ext
-
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.putExtra(Intent.EXTRA_STREAM, fileUri);
                     intent.setType("image/*");
@@ -335,6 +304,4 @@ public class AlbumView extends AppCompatActivity {
     private void closeDB() {
         DB.close();
     }
-
-
 }

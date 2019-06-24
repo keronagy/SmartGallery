@@ -9,7 +9,6 @@ import android.database.Cursor;
 import android.database.MergeCursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
@@ -30,27 +29,30 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.example.SmartGallery.Adapters.AlbumAdapter;
 import com.example.SmartGallery.Adapters.SearchAdapter;
 import com.example.SmartGallery.Album;
 import com.example.SmartGallery.CONSTANTS;
 import com.example.SmartGallery.Database.DBAdapter;
 import com.example.SmartGallery.Image;
+import com.example.SmartGallery.ManualQueueSingleton;
 import com.example.SmartGallery.R;
 import com.example.SmartGallery.ServerConnectionService;
+import com.example.SmartGallery.ServiceQueueSingleton;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -58,7 +60,6 @@ import java.util.HashSet;
 public class MainActivity extends AppCompatActivity {
 
     private String TAG = MainActivity.class.getSimpleName();
-    private static final String endpoint = "https://api.androidhive.info/json/glide.json";
     private ArrayList<Album> albumList;
     private ProgressDialog pDialog;
     private AlbumAdapter mAdapter;
@@ -66,32 +67,25 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private Uri uri;
     private Toolbar toolbar;
-    static final int REQUEST_PERMISSION_KEY = 1;
-    final int RequestPermissionCode=2;
-    DBAdapter DB;
+    private static final int REQUEST_PERMISSION_KEY = 1;
+    private final int RequestPermissionCode=2;
+    private DBAdapter DB;
     private Button StartService;
-
-
-    RecyclerView.OnItemTouchListener touchListener;
+    private RecyclerView.OnItemTouchListener touchListener;
     private Intent ServerSercvice ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setSubtitle(R.string.albums);
         albumList = new ArrayList<>();
-
-
         openDB();
         recyclerView = findViewById(R.id.recycler_view);
-
         pDialog = new ProgressDialog(this);
         mAdapter = new AlbumAdapter(getApplicationContext(), albumList);
-
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -107,21 +101,16 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(CONSTANTS.ALBUM_NAME, albumList.get(position).getName());
                 intent.putExtra(CONSTANTS.ALBUM_PATH, albumList.get(position).getPath());
                 startActivity(intent);
-
             }
-
             @Override
             public void onLongClick(View view, int position) {
-
             }
         });
-
         recyclerView.addOnItemTouchListener(touchListener);
-
         String API = loadSharedPref();
         if(API.equals(""))
         {
-            saveSharedPref("http://192.168.1.6:5000/api");
+            saveSharedPref(CONSTANTS.SERVER_URI);
         }
         else
         {
@@ -135,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
                 startService(ServerSercvice);
             }
         });
-
     }
 
     @Override
@@ -184,7 +172,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String s) {
                 if(s.equals("")) return false;
-
                 SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
                 String SearchBy = sharedPreferences.getString(CONSTANTS.SEARCH_BY,CONSTANTS.SEARCH_BY_DEFAULT);
                 Cursor data = null;
@@ -196,13 +183,10 @@ public class MainActivity extends AppCompatActivity {
                 {
                     data = DB.getRowByTag(s);
                 }
-
                 HashSet<Image> searcedImages = new HashSet<>();
                 if (data != null) {
                     data.moveToFirst();
                     for (int i = 0; i < data.getCount(); i++) {
-
-
                         String path = data.getString(DBAdapter.COL_PATH);
                         File f = new File(path);
                         String name = f.getName();
@@ -216,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                     final ArrayList<Image> searchedlist = new ArrayList<Image>(searcedImages);
-
                     searchAdapter = new SearchAdapter(getApplicationContext(), searchedlist);
                     RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
                     recyclerView.setLayoutManager(mLayoutManager);
@@ -226,11 +209,9 @@ public class MainActivity extends AppCompatActivity {
                     touchListener = new AlbumAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new AlbumAdapter.ClickListener() {
                         @Override
                         public void onClick(View view, int position) {
-
                             Bundle bundle = new Bundle();
                             bundle.putSerializable(CONSTANTS.IMAGES, searchedlist);
                             bundle.putInt(CONSTANTS.POSITION, position);
-
                             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                             SlideshowDialogFragment newFragment = SlideshowDialogFragment.newInstance();
                             newFragment.setArguments(bundle);
@@ -243,7 +224,6 @@ public class MainActivity extends AppCompatActivity {
                             Uri fileUri = Uri.parse("file://" + searchedlist.get(position).getPath());
 
                             //No need to do mimeType work or ext
-
                             Intent intent = new Intent(Intent.ACTION_SEND);
                             intent.putExtra(Intent.EXTRA_STREAM, fileUri);
                             intent.setType("image/*");
@@ -271,18 +251,14 @@ public class MainActivity extends AppCompatActivity {
             openCamAndCrop();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
     private void fetchAlbums() {
-
         pDialog.setMessage("Loading Albums");
         pDialog.show();
-
         Uri uriExternal = android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriInternal = android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI;
-
         String[] projection = { MediaStore.MediaColumns.DATA,
                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.MediaColumns.DATE_MODIFIED };
         Cursor cursorExternal = getContentResolver().query(uriExternal, projection, "_data IS NOT NULL) GROUP BY (bucket_display_name",
@@ -294,12 +270,9 @@ public class MainActivity extends AppCompatActivity {
         boolean first = true;
         albumList.clear();
         while (cursor.moveToNext()) {
-
-
             String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
             String name = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME));
             String timestamp = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED));
-
             Album album = new Album(this, path,name,timestamp);
             albumList.add(album);
             mAdapter.notifyDataSetChanged();
@@ -332,10 +305,7 @@ public class MainActivity extends AppCompatActivity {
             case RequestPermissionCode:
             {
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-//                    Toast.makeText(this,getString(R.string.perm_granted),Toast.LENGTH_SHORT).show();
                     openCamAndCrop();
-//                else
-//                    Toast.makeText(this,getString(R.string.perm_canceled),Toast.LENGTH_SHORT).show();
             }
             break;
         }
@@ -358,9 +328,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (recyclerView.getAdapter()== searchAdapter)
         {
-
             toolbar.setSubtitle(R.string.albums);
-
             RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
             recyclerView.setLayoutManager(mLayoutManager);
             recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -373,9 +341,7 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra(CONSTANTS.ALBUM_NAME, albumList.get(position).getName());
                     intent.putExtra(CONSTANTS.ALBUM_PATH, albumList.get(position).getPath());
                     startActivity(intent);
-
                 }
-
                 @Override
                 public void onLongClick(View view, int position) {
 
@@ -402,14 +368,6 @@ public class MainActivity extends AppCompatActivity {
                 fetchAlbums();
             addAllPathstoDB();
         }
-
-
-
-    }
-
-    public void checkPermissions()
-    {
-
     }
 
 
@@ -471,69 +429,57 @@ public class MainActivity extends AppCompatActivity {
 
     private void getTextFromImage(Bitmap bitmap) {
 
-        new ServerConnection().execute( bitmap);
-    }
-
-    private class ServerConnection extends AsyncTask<Bitmap, Void, String> {
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            Toast.makeText(MainActivity.this, "Async task Finished\n"+s, Toast.LENGTH_LONG).show();
-
+        String encodedImage;
+        ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
+        String url = this.getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).getString(CONSTANTS.APP_SERVER_PREF_API,CONSTANTS.APP_SERVER_PREF_API)+CONSTANTS.CAPTION_DTECTION;
+        bitmap.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+        byte[] b = byteArrayBitmapStream.toByteArray();
+        encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+        JSONObject postData = new JSONObject();
+        try{
+            postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
         }
-
-        @Override
-        protected String doInBackground(Bitmap... bitmap) {
-
-            String encodedImage;
-            ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
-
-            bitmap[0].compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
-            byte[] b = byteArrayBitmapStream.toByteArray();
-            encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-            JSONObject postData = new JSONObject();
-            try{
-                postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage );
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-
-            String data = "";
-            HttpURLConnection httpURLConnection = null;
-            try {
-                httpURLConnection = (HttpURLConnection) new URL(CONSTANTS.SERVER_URI).openConnection();
-                httpURLConnection.setRequestProperty(CONSTANTS.CONTENT_TYPE_STRING, CONSTANTS.CONTENT_TYPE);
-                httpURLConnection.setRequestMethod(CONSTANTS.REQUEST_TYPE);
-
-                httpURLConnection.setDoOutput(true);
-
-                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
-                wr.writeBytes(postData.toString());
-                wr.flush();
-                wr.close();
-
-                InputStream in = httpURLConnection.getInputStream();
-                InputStreamReader inputStreamReader = new InputStreamReader(in);
-
-                int inputStreamData = inputStreamReader.read();
-                while (inputStreamData != -1) {
-                    char current = (char) inputStreamData;
-                    inputStreamData = inputStreamReader.read();
-                    data += current;
-                }
-            } catch (Exception e) {
-                data = "error connecting to server\n"+ e.getMessage();
-                e.printStackTrace();
-            } finally {
-                if (httpURLConnection != null) {
-                    httpURLConnection.disconnect();
-                }
-            }
-
-            return data;
+        catch (Exception e){
+            e.printStackTrace();
         }
+        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, postData, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(Object tag , JSONObject response) {
+                try {
+                    String Caption = response.getString(CONSTANTS.RECEIVED_CAPTION_JSON);
+                    String Tags = response.getString(CONSTANTS.RECEIVED_TAGS_JSON);
+                    Toast.makeText(MainActivity.this, "Photo taken by camera:\nTags: "+ Tags+"\nCaption: "+Caption, Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                ServiceQueueSingleton.getInstance(MainActivity.this).startRequestQueue();
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+//                Toast.makeText(MainActivity.this, "error ya 3abeeet\n"+ error.toString(), Toast.LENGTH_SHORT).show();
+                Log.d("eeeeeee", "onErrorResponse: "+ error.toString());
+            }
+        });
+        request.setRetryPolicy(new RetryPolicy() {
+            @Override
+            public int getCurrentTimeout() {
+                return 300000;
+            }
+
+            @Override
+            public int getCurrentRetryCount() {
+                return 50;
+            }
+
+            @Override
+            public void retry(VolleyError error) throws VolleyError {
+
+            }
+        });
+        request.setTag("Camera");
+        ServiceQueueSingleton.getInstance(this).stopRequestQueue();
+        ManualQueueSingleton.getInstance(this).addToRequestQueue(request);
     }
 
     public void addAllPathstoDB() {

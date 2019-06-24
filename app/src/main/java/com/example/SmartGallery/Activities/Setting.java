@@ -23,19 +23,15 @@ public class Setting extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
-
         searchByTxt = findViewById(R.id.search_by);
         URI = findViewById(R.id.server_uri_txt);
         Save = findViewById(R.id.save_setting_btn);
         Cancel = findViewById(R.id.cancel_setting_btn);
-
-
         SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
         String SearchBy = sharedPreferences.getString(CONSTANTS.SEARCH_BY,CONSTANTS.SEARCH_BY_DEFAULT);
         searchByTxt.setText(SearchBy);
         String URIPREF = sharedPreferences.getString(CONSTANTS.APP_SERVER_PREF_API,CONSTANTS.SERVER_URI);
         URI.setText(URIPREF);
-
         Save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -48,28 +44,23 @@ public class Setting extends AppCompatActivity {
             }
 
         });
-
         Cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
             }
         });
-
-
     }
 
     private void saveSharedPref(String API)
     {
         SharedPreferences.Editor editor = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).edit();
         editor.putString(CONSTANTS.APP_SERVER_PREF_API,API);
-
         editor.apply();
     }
 
 
     public void showRadioButtonDialog(View view) {
-
         final SharedPreferences.Editor editor = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF).edit();
         AlertDialog.Builder builder = new AlertDialog.Builder(Setting.this, AlertDialog.THEME_DEVICE_DEFAULT_LIGHT);
         builder
@@ -90,6 +81,4 @@ public class Setting extends AppCompatActivity {
                     }
                 }).show();
     }
-
-
 }
