@@ -85,12 +85,12 @@ public class CONSTANTS {
         String encodedImage;
         ByteArrayOutputStream byteArrayBitmapStream = new ByteArrayOutputStream();
         Bitmap bmp =  getBitmap(path);
-        bmp.compress(Bitmap.CompressFormat.PNG, CONSTANTS.COMPRESSION_QUALITY, byteArrayBitmapStream);
+        bmp.compress(Bitmap.CompressFormat.PNG, COMPRESSION_QUALITY, byteArrayBitmapStream);
         byte[] b = byteArrayBitmapStream.toByteArray();
         encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
         JSONObject postData = new JSONObject();
         try {
-            postData.put(CONSTANTS.IMAGE_POST_SERVER, encodedImage);
+            postData.put(IMAGE_POST_SERVER, encodedImage);
         } catch (Exception e) {
             e.printStackTrace();
         }
