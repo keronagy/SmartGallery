@@ -1,7 +1,6 @@
 package com.example.SmartGallery.Activities;
 
 import android.Manifest;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -38,7 +37,6 @@ import java.util.HashSet;
 public class AlbumView extends AppCompatActivity {
 
     private ArrayList<Image> images;
-    private ProgressDialog pDialog;
     private ImagesAdapter mAdapter;
     private RecyclerView recyclerView;
     private static final int REQUEST_PERMISSION_KEY = 1;
@@ -56,7 +54,6 @@ public class AlbumView extends AppCompatActivity {
         setSupportActionBar(toolbar);
         openDB();
         recyclerView = findViewById(R.id.recycler_view);
-        pDialog = new ProgressDialog(this);
         images = new ArrayList<>();
         mAdapter = new ImagesAdapter(getApplicationContext(), images);
         album_name = getIntent().getStringExtra(CONSTANTS.ALBUM_NAME);
@@ -217,8 +214,7 @@ public class AlbumView extends AppCompatActivity {
     }
 
     private void fetchImages() {
-        pDialog.setMessage("Loading Photos");
-        pDialog.show();
+
         Uri uriExternal = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriInternal = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
         String[] projection = {MediaStore.MediaColumns.DATA,
@@ -238,7 +234,6 @@ public class AlbumView extends AppCompatActivity {
             if(first)
             {
                 first = false;
-                pDialog.dismiss();
             }
         }
         cursor.close();

@@ -1,7 +1,6 @@
 package com.example.SmartGallery.Activities;
 
 import android.Manifest;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -60,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String TAG = MainActivity.class.getSimpleName();
     private ArrayList<Album> albumList;
-    private ProgressDialog pDialog;
     private AlbumAdapter mAdapter;
     private SearchAdapter searchAdapter;
     private RecyclerView recyclerView;
@@ -83,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
         albumList = new ArrayList<>();
         openDB();
         recyclerView = findViewById(R.id.recycler_view);
-        pDialog = new ProgressDialog(this);
         mAdapter = new AlbumAdapter(getApplicationContext(), albumList);
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
         recyclerView.setLayoutManager(mLayoutManager);
@@ -123,9 +120,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         closeDB();
-        if (pDialog != null && pDialog.isShowing()) {
-            pDialog.cancel();
-        }
+
     }
 
     private void openDB() {
@@ -256,8 +251,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchAlbums() {
-        pDialog.setMessage("Loading Albums");
-        pDialog.show();
+
         Uri uriExternal = android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriInternal = android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI;
         String[] projection = { MediaStore.MediaColumns.DATA,
@@ -280,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
             if(first)
             {
                 first = false;
-                pDialog.dismiss();
+
             }
         }
         cursor.close();
