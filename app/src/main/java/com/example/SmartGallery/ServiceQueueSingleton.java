@@ -52,6 +52,12 @@ public class ServiceQueueSingleton {
     public void cancelRequestByTag(String Tag)
     {
         requestQueue.cancelAll(Tag);
+
+
     }
 
+    public void removeAllRequests()
+    {
+        requestQueue.removeRequests();
+    }
 }

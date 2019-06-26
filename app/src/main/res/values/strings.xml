@@ -16,6 +16,9 @@
     <string name="name">Name</string>
     <string name="search_results">Search Results</string>
     <string name="search_by">Search By</string>
+    <string name="start_syncing_with_the_app_starts">Start Syncing with the app starts</string>
+    <string name="select_albums">Select Albums</string>
+    <string name="start_communication">Start Communication</string>
 
 
 </resources>

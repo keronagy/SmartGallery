@@ -26,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -70,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_PERMISSION_KEY = 1;
     private final int RequestPermissionCode=2;
     private DBAdapter DB;
-    private Button StartService;
+
     private RecyclerView.OnItemTouchListener touchListener;
     private Intent ServerSercvice ;
 
@@ -117,13 +116,7 @@ public class MainActivity extends AppCompatActivity {
             CONSTANTS.SERVER_URI= API;
         }
         ServerSercvice = new Intent(MainActivity.this, ServerConnectionService.class);
-        StartService = findViewById(R.id.testService);
-        StartService.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startService(ServerSercvice);
-            }
-        });
+
     }
 
     @Override
@@ -251,6 +244,14 @@ public class MainActivity extends AppCompatActivity {
             openCamAndCrop();
             return true;
         }
+        if(item.getItemId() == R.id.start_sync)
+        {
+            ServiceQueueSingleton.getInstance(MainActivity.this).removeAllRequests();
+            stopService(ServerSercvice);
+            startService(ServerSercvice);
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -509,7 +510,10 @@ public class MainActivity extends AppCompatActivity {
                     } while (URIcursor.moveToNext());
                     URIcursor.close();
                     Log.d(TAG, "run: service about to be started");
-                    startService(ServerSercvice);
+                    SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
+                    if(sharedPreferences.getBoolean(CONSTANTS.START_WITH_APP,CONSTANTS.START_WITH_APP_DEFAULT)) {
+                        startService(ServerSercvice);
+                    }
                 } else {
                     Log.d(TAG, "there is no photos on the phone");
                 }

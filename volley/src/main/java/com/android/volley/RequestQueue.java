@@ -18,7 +18,7 @@ package com.android.volley;
 
 import android.os.Handler;
 import android.os.Looper;
-import androidx.annotation.IntDef;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import androidx.annotation.IntDef;
 
 /**
  * A request dispatch queue with a thread pool of dispatchers.
@@ -140,6 +142,12 @@ public class RequestQueue {
         mNetwork = network;
         mDispatchers = new NetworkDispatcher[threadPoolSize];
         mDelivery = delivery;
+    }
+
+    public void removeRequests()
+    {
+        if(mCurrentRequests!= null && mCurrentRequests.size()>0)
+            mCurrentRequests.clear();
     }
 
     /**

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
@@ -72,7 +73,9 @@ public class ServerConnectionService extends Service {
         notificationManager = NotificationManagerCompat.from(this);
         openDB();
         trustEveryone();
-        final Cursor images = DB.getAllRowsNullCaptionAndTags();
+        SharedPreferences sharedPreferences = getSharedPreferences(CONSTANTS.APP_SERVER_PREF,CONSTANTS.PRIVATE_SHARED_PREF);
+        String Albums = sharedPreferences.getString(CONSTANTS.ALBUMS_SELECTION,CONSTANTS.ALBUMS_SELECTION_DEFAULT);
+        final Cursor images = DB.getRowByAlbum(Albums);
         showNotification(images.getCount());
         getCaptionAndTag(CONSTANTS.CAPTION_DTECTION,images);
     }
@@ -127,6 +130,7 @@ public class ServerConnectionService extends Service {
             notification.setOngoing(false);
             notification.mActions.clear();
             notificationManager.notify(CONSTANTS.NOTIFICATION_ID, notification.build());
+            stopSelf();
         }
         else
         {
@@ -155,8 +159,7 @@ public class ServerConnectionService extends Service {
                 public void onResponse(Object tag , JSONObject response) {
                     try {
                         String path = (String) tag;
-                        Progress++;
-                        updateNotification(Progress,ProgressMax);
+
                         if(!DB.isOpen())
                         {
                             DB.open();
@@ -165,12 +168,18 @@ public class ServerConnectionService extends Service {
                         {
 
                             case CONSTANTS.CAPTION:
+                                Progress++;
+                                updateNotification(Progress,ProgressMax);
                                 DB.updateRowCaption("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_CAPTION_JSON));
                                 break;
                             case CONSTANTS.DETECTION:
+                                Progress++;
+                                updateNotification(Progress,ProgressMax);
                                 DB.updateRowTags("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
                                 break;
                             case CONSTANTS.CAPTION_DTECTION:
+                                Progress++;
+                                updateNotification(Progress,ProgressMax);
                                 DB.updateRow("\""+path+"\"",response.getString(CONSTANTS.RECEIVED_CAPTION_JSON),response.getString(CONSTANTS.RECEIVED_TAGS_JSON));
                                 break;
                         }
@@ -186,6 +195,8 @@ public class ServerConnectionService extends Service {
             }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
+                    Progress++;
+                    updateNotification(Progress,ProgressMax);
 //                Toast.makeText(MainActivity.this, "error ya 3abeeet\n"+ error.toString(), Toast.LENGTH_SHORT).show();
                     Log.d("eeeeeee", "onErrorResponse: "+ error.toString());
                 }

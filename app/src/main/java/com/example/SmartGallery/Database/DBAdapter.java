@@ -219,6 +219,15 @@ public class DBAdapter {
 		return c;
 	}
 
+	public Cursor getRowByAlbum(String albums) {
+		String where = KEY_ALBUM + " = " + SearchByAlbumsWhereClause(albums) + " AND "+KEY_CAPTION + " IS null AND " + KEY_TAGS + " IS null"; ;
+		Cursor c = 	db.query(true, DATABASE_TABLE, ALL_KEYS,
+				where, null, null, null, null, null);
+		if (c != null) {
+			c.moveToFirst();
+		}
+		return c;
+	}
 	// Change an existing row to be equal to new data.
 //	public boolean updateRow(String path, String caption, String tags,String date,String album) {
 //		String where = KEY_PATH + "=" + path;
@@ -291,6 +300,30 @@ public class DBAdapter {
 
         }
         return like;
+    }
+	public String SearchByAlbumsWhereClause(String albums)
+	{
+
+        String[] splited = albums.split("\\s+");
+        String s = "\""+splited[0]+"\"";
+        for (int i = 1; i < splited.length; i++) {
+            s += " OR "+ KEY_ALBUM +" = \"" +splited[i]+"\"";
+        }
+        return s;
+	}
+	public Cursor getAllAlbumsNames()
+    {
+        Cursor c = 	db.query(true, DATABASE_TABLE, new String[]{KEY_ALBUM+" as _id "},
+                null, null, null, null, null, null);
+        if (c != null) {
+            c.moveToFirst();
+        }
+        return c;
+//        String[] projection = new String[] { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ARTIST, MediaStore.Audio.Albums.ALBUM_ART, MediaStore.Audio.Albums.NUMBER_OF_SONGS };
+//        String selection = null;
+//        String[] selectionArgs = null;
+//        String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
+//        Cursor cursor = getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, projection, selection, selectionArgs, sortOrder);
     }
 
     public boolean isOpen()

@@ -55,6 +55,16 @@ public class CONSTANTS {
     public static final String SEARCH_BY_DEFAULT= "Objects";
     public static final String SEARCH_BY_TAGS= "Objects";
     public static final String SEARCH_BY_CAPTIONS= "Captions";
+    public static final String ALBUMS_SELECTION= "albums";
+    public static final String ALBUMS_SELECTION_DEFAULT= "Camera";
+    public static final String START_WITH_APP= "start_with_app";
+    public static final Boolean START_WITH_APP_DEFAULT= false;
+    public static final Boolean SHARED_FALSE= false;
+    public static final Boolean SHARED_TRUE= false;
+
+
+
+
 
     //BroadCast Receiver Constants
     public static final String BROADCAST_MSG = "queue_status";
