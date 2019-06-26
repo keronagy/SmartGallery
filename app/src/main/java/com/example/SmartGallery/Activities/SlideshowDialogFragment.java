@@ -145,6 +145,8 @@ public class SlideshowDialogFragment extends DialogFragment {
         if(Caption==null || Tags== null)
         {
             GetCaptionBtn.setVisibility(View.VISIBLE);
+            captionTxt.setText("");
+            tagsTxt.setText("");
         }
         else
         {
