@@ -58,6 +58,12 @@ public class ServiceQueueSingleton {
 
     public void removeAllRequests()
     {
-        requestQueue.removeRequests();
+        requestQueue.cancelAll(new RequestQueue.RequestFilter() {
+            @Override
+            public boolean apply(Request<?> request) {
+                return true;
+            }
+        });
+//        requestQueue.removeRequests();
     }
 }

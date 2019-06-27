@@ -25,10 +25,16 @@ public class NotificationReceiver extends BroadcastReceiver {
     }
 
     public void StopQueue() {
-        ServiceQueueSingleton.getInstance(ctx).stopRequestQueue();
+
+        ServiceQueueSingleton.getInstance(ctx).removeAllRequests();
+
+//        ServiceQueueSingleton.getInstance(ctx).stopRequestQueue();
     }
 
     public void StartQueue() {
-        ServiceQueueSingleton.getInstance(ctx).startRequestQueue();
+//        ServiceQueueSingleton.getInstance(ctx).startRequestQueue();
+        Intent intent =  new Intent(ctx, ServerConnectionService.class);
+        ctx.stopService(intent);
+        ctx.startService(intent);
     }
 }
